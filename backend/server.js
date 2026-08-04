@@ -12,7 +12,7 @@ ConnectDB();
 
 // // routes source
 const userRoutes = require("./routes/userRoutes");
-// const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 
 //cors
@@ -29,7 +29,7 @@ server.use(cookieParser());
 
 
 // server routes.
-// server.use("/auth", authRoutes);
+server.use("/auth", authRoutes);
 server.use("/users", userRoutes);
 
 //server start
