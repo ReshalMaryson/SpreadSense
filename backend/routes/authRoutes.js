@@ -4,8 +4,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 // controllers
-const { Login, Logout, refreshToken } = require("../controllers/auth");
-// GoogleLogin
+const { Login, Logout, refreshToken ,GoogleLogin} = require("../controllers/auth");
+
 // middlewares
 const verifyToken = require("../middlewares/auth/verifyJWT");
 
@@ -13,7 +13,7 @@ const verifyToken = require("../middlewares/auth/verifyJWT");
 router.post("/login", Login);
 
 //-----------google login route
-// router.post("/google",GoogleLogin);
+router.post("/google",GoogleLogin);
 
 // --------------logout with JWT + sessions + cookies + refresh token---------
 router.post("/logout", verifyToken,Logout);

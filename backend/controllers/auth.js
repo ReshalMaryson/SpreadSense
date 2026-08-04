@@ -118,33 +118,56 @@ exports.refreshToken = async (req, res) => {
   }
 
   try {
-    // verify
-    const tokenVerfiy = jwt.verify(rt, process.env.JWT_REFRESH_SECRET);
+    // verify signature + expiry
+    const tokenVerify = jwt.verify(rt, process.env.JWT_REFRESH_SECRET);
 
-    // check Token in DB
     const tokenExist = await refreshTokenSchema.findOne({ token: rt });
 
     if (!tokenExist) {
+      await refreshTokenSchema.deleteMany({ user: tokenVerify.id });
+
+      res.clearCookie("token");
+      res.clearCookie("refreshToken");
+
       return res.status(403).json({
-        message: "Invalid refresh token",
+        message: "Refresh token reuse detected. All sessions revoked, please login again.",
       });
     }
 
-    // release a new token
+    await refreshTokenSchema.deleteOne({ _id: tokenExist._id });
+
+
     const newAccessToken = jwt.sign(
-      { id: tokenVerfiy.id },
+      { id: tokenVerify.id },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "3m",
-      },
+      { expiresIn: "1m" },
     );
 
-    // set new access token in cookies
+
+    const newRefreshToken = jwt.sign(
+      { id: tokenVerify.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "1d" },
+    );
+
+    await refreshTokenSchema.create({
+      user: tokenVerify.id,
+      token: newRefreshToken,
+    });
+
+
     res.cookie("token", newAccessToken, {
       httpOnly: true,
-         secure:false, 
+      secure: false,
       sameSite: "strict",
       maxAge: 3 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 1 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({
@@ -158,90 +181,90 @@ exports.refreshToken = async (req, res) => {
 };
 
 // google login
-// exports.GoogleLogin = async (req, res) => {
-//   try {
-//     const { accessToken } = req.body;
+exports.GoogleLogin = async (req, res) => {
+  try {
+    const { accessToken } = req.body;
 
-//     if (!accessToken) {
-//       return res.status(400).json({ message: "missing required fields" });
-//     }
+    if (!accessToken) {
+      return res.status(400).json({ message: "missing required fields" });
+    }
 
-//     // verify token with Google
-//     const googleRes = await fetch(
-//       `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`
-//     );
+    // verify token with Google
+    const googleRes = await fetch(
+      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`
+    );
 
-//     if (!googleRes.ok) {
-//       return res.status(401).json({ message: "invalid google token" });
-//     }
+    if (!googleRes.ok) {
+      return res.status(401).json({ message: "invalid google token" });
+    }
 
-//     const payload = await googleRes.json();
+    const payload = await googleRes.json();
   
 
-//     // find or create user
-//     let user = await Users.findOne({ email: payload.email });
-//     if (!user) {
-//       user = await Users.create({
-//         name: payload.name,
-//         email: payload.email,
-//         googleId: payload.sub,
-//         avatar: payload.picture,
-//       });
-//     }
+    // find or create user
+    let user = await Users.findOne({ email: payload.email });
+    if (!user) {
+      user = await Users.create({
+        name: payload.name,
+        email: payload.email,
+        googleId: payload.sub,
+        avatar: payload.picture,
+      });
+    }
 
-//     // creating JWT for current user logged in.
-//     const jwtAccessToken = jwt.sign(
-//       {
-//         id: user._id,
-//       },
-//       process.env.JWT_SECRET,
-//       {
-//         expiresIn: "1m", 
-//       },
-//     );
+    // creating JWT for current user logged in.
+    const jwtAccessToken = jwt.sign(
+      {
+        id: user._id,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1m", 
+      },
+    );
 
-//     // Refresh Token for the current user.
-//     const refreshToken = jwt.sign(
-//       { id: user._id },
-//       process.env.JWT_REFRESH_SECRET,
-//       {
-//         expiresIn: "1d",
-//       },
-//     );
+    // Refresh Token for the current user.
+    const refreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_REFRESH_SECRET,
+      {
+        expiresIn: "1d",
+      },
+    );
 
-//     // save refresh token in the DB
-//     if (refreshToken) {
-//       refreshTokenSchema.create({
-//         user: user._id,
-//         token: refreshToken,
-//       });
-//     }
+    // save refresh token in the DB
+    if (refreshToken) {
+      refreshTokenSchema.create({
+        user: user._id,
+        token: refreshToken,
+      });
+    }
 
-//     // save access token in cookie
-//     res.cookie("token", jwtAccessToken, {
-//       httpOnly: true,
-//       secure:true, 
-//       sameSite: "none", 
-//       maxAge: 3 * 60 * 1000,
-//     });
+    // save access token in cookie
+    res.cookie("token", jwtAccessToken, {
+      httpOnly: true,
+      secure:true, 
+      sameSite: "none", 
+      maxAge: 3 * 60 * 1000,
+    });
 
-//     // save refresh token in cookie
-//     res.cookie("refreshToken", refreshToken, {
-//       httpOnly: true,
-//       secure:true, 
-//       sameSite: "none",
-//       maxAge: 1 * 24 * 60 * 60 * 1000,
-//     });
+    // save refresh token in cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure:true, 
+      sameSite: "none",
+      maxAge: 1 * 24 * 60 * 60 * 1000,
+    });
 
-//     // payload for the response
-//     const resUser = {
-//       id: user._id,
-//       name: user.name,
-//       email: user.email,
-//     };
+    // payload for the response
+    const resUser = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    };
 
-//     return res.status(200).json({ message: "login successful", data: resUser });
-//   } catch (err) {
-//     return res.status(500).json({ message: "server error " + err.message });
-//   }
-// };
+    return res.status(200).json({ message: "login successful", data: resUser });
+  } catch (err) {
+    return res.status(500).json({ message: "server error " + err.message });
+  }
+};
