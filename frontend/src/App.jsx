@@ -1,7 +1,7 @@
 function App() {
   return (
     <>
-      <h1>yes??</h1>
+      <h1>yes new??</h1>
     </>
   );
 }
