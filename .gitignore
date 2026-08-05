@@ -9,3 +9,6 @@ frontend/.env
 
 # Logs
 *.log
+
+backend/uploads/
+!backend/uploads/.gitkeep
