@@ -4,6 +4,7 @@ const router = express.Router();
 // middleware
 const uploadExcel = require("../middlewares/file/upload");
 const verifyToken = require("../middlewares/auth/verifyJWT");
+const validateFile = require("../middlewares/file/validateFile");
 
 
 // controller
@@ -14,6 +15,7 @@ router.post(
     "/upload",
     verifyToken,
     uploadExcel,
+    validateFile,
     uploadFile
 );
 

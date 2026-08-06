@@ -1,26 +1,10 @@
 const multer = require("multer");
 const path = require("path");
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/");
-    },
+const storage = multer.memoryStorage();
 
-    filename: (req, file, cb) => {
-        const uniqueName =
-            Date.now() + "-" + Math.round(Math.random() * 1E9);
-
-        cb(
-            null,
-            uniqueName + path.extname(file.originalname)
-        );
-    }
-});
-
-const fileFilter = (req, file, cb) => {
-
+  const fileFilter = (req, file, cb) => {
     const allowedExtensions = [".xlsx", ".xls"];
-
     const extension = path.extname(file.originalname).toLowerCase();
 
     if (allowedExtensions.includes(extension)) {
@@ -38,7 +22,6 @@ const upload = multer({
     fileFilter
 });
 
-// 👇 Your own middleware wrapper
 const uploadExcel = (req, res, next) => {
 
     upload.single("excelFile")(req, res, (err) => {
