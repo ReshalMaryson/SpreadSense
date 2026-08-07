@@ -10,5 +10,8 @@ frontend/.env
 # Logs
 *.log
 
+# backend related folder and files 
 backend/uploads/
 !backend/uploads/.gitkeep
+backend/testRead.js
+backend/testFile
