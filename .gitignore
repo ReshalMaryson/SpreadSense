@@ -14,4 +14,4 @@ frontend/.env
 backend/uploads/
 !backend/uploads/.gitkeep
 backend/testRead.js
-backend/testFile
+backend/testFile/

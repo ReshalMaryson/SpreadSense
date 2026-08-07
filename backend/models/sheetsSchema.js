@@ -23,6 +23,15 @@ const sheetsSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    insights: {
+    type: [
+        {
+            title: { type: String, required: true },
+            finding: { type: String, required: true },
+        }
+    ],
+    default: [],
+    },
   },
   { timestamps: true }
 );

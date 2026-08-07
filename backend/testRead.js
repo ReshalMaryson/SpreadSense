@@ -9,7 +9,7 @@ Date,Brand,Category,Price
 
 async function test() {
     const { result, usage } = await generateInsights(sampleCsv);
-    console.log(result);
+    console.log(result);``
     console.log(usage);
 }
 
