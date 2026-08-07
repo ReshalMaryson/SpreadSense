@@ -1,6 +1,7 @@
 const Sheet = require("../models/sheetsSchema");
 const getBucket = require("../config/gridfs");
 const { Readable } = require("stream");
+const {workbookToCsv} = require("../utils/exlTocsv");
 
 exports.uploadFile = async (req, res) => {
   try {
@@ -13,7 +14,11 @@ exports.uploadFile = async (req, res) => {
       return res.status(400).json({ message: "File size cannot exceed 2 MB" });
     }
 
-    const bucket = getBucket();
+    // this thing converts the parsed excel sheet to csv format.
+    const csv = workbookToCsv(req.parsedSheet);
+    // console.log(csv);  // whole CSV formated data
+
+    const bucket = getBucket(); // fsGrid current bucket
     
     const uploadStream = bucket.openUploadStream(req.file.originalname, {
       contentType: req.file.mimetype,

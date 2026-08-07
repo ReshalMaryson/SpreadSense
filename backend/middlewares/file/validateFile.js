@@ -22,20 +22,24 @@ async function validateFile(req, res, next) {
         }
 
         for (const sheet of rows) {
+            if (!sheet.data || sheet.data.length === 0) {
+                return res.status(400).json({
+                    message: `Invalid: sheet "${sheet.sheet}" is empty`
+                });
+            }
             const colCount = sheet.data[0].length;
 
-            console.log(
-                `Sheet "${sheet.sheet}" — columns: ${colCount}`
-            );
+            console.log(`Sheet "${sheet.sheet}" — columns: ${colCount}`);
 
             if (colCount > MAX_COLS) {
                 return res.status(400).json({
-                    message: `Invalid: sheet "${sheet.sheet}" has ${colCount} columns, max is ${MAX_COLS}`
+                    message: `Invalid: sheet '${sheet.sheet}' has ${colCount} columns, max is ${MAX_COLS}`
                 });
             }
         }
 
-        // console.log("File passed validation.");
+        console.log("File passed validation.");
+        req.parsedSheet = rows;
 
         next();
 
