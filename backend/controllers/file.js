@@ -6,6 +6,7 @@ const {generateInsights} = require("../services/geminiService");
 
 // schema 
 const Sheet = require("../models/sheetsSchema");
+const CSV=require("../models/csvSchema");
 
 // upload file and generate insights.
 exports.uploadFile = async (req, res) => {
@@ -32,7 +33,6 @@ exports.uploadFile = async (req, res) => {
       });
     }
 
-
     const bucket = getBucket(); // fsGrid current bucket
     
     const uploadStream = bucket.openUploadStream(req.file.originalname, {
@@ -51,7 +51,16 @@ exports.uploadFile = async (req, res) => {
         insights
       });
 
+      // saving csv to DB
+      await CSV.create({
+        sheetId:file._id,
+        csvData:csv
+      });
+
+      // success response with file details
+
       return res.status(201).json({
+        status:"success",
         message: "File uploaded successfully",
         file,
       });
@@ -59,12 +68,12 @@ exports.uploadFile = async (req, res) => {
 
     uploadStream.on("error", (err) => {
       console.error(err);
-      return res.status(500).json({ message: "Failed to upload file" });
+      return res.status(500).json({ status :"upload-error",message: "Failed to upload file" });
     });
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Failed to upload file" });
+    return res.status(500).json({ status :"failure",message: "Failed to upload file" });
   }
 };
 
@@ -77,7 +86,7 @@ exports.deleteFile = async (req, res) => {
         });
 
         if (!sheet) {
-            return res.status(404).json({ message: "File not found" });
+            return res.status(404).json({status :"failure", message: "File not found" });
         }
 
         const bucket = getBucket();
@@ -87,10 +96,10 @@ exports.deleteFile = async (req, res) => {
 
         await Sheet.deleteOne({ _id: sheet._id });
 
-        return res.status(200).json({ message: "File deleted successfully" });
+        return res.status(200).json({ status:"success", message: "File deleted successfully" });
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: "Failed to delete file" });
+        return res.status(500).json({status :"failure", message: "Failed to delete file" });
     }
 };
