@@ -58,7 +58,6 @@ exports.uploadFile = async (req, res) => {
       });
 
       // success response with file details
-
       return res.status(201).json({
         status:"success",
         message: "File uploaded successfully",

@@ -14,6 +14,7 @@ ConnectDB();
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const fileRoutes = require("./routes/fileRoutes");
+const chatRoutes = require("./routes/chatRoute");
 //cors
 server.use(
   cors({
@@ -31,6 +32,7 @@ server.use(cookieParser());
 server.use("/auth", authRoutes);
 server.use("/users", userRoutes);
 server.use("/files", fileRoutes);
+server.use("/chat", chatRoutes);
 
 //server start
 const PORT = process.env.PORT || 6000;
