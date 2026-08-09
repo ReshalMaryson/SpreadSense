@@ -5,30 +5,32 @@ const { chatWithSheet } = require("../services/geminiMessageService");
 
 const HISTORY_LIMIT = 10; 
 
+
+// create a chat.
 exports.chat = async (req, res) => {
     try {
         const { sheetId, message } = req.body;
 
         if (!sheetId || !message) {
-            return res.status(400).json({ message: "sheetId and message are required" });
+            return res.status(400).json({ status:false,message: "sheetId and message are required" });
         }
 
         const sheet = await Sheet.findOne({ _id: sheetId, userId: req.id });
 
         if (!sheet) {
-            return res.status(404).json({ message: "File not found" });
+            return res.status(404).json({ status:false,message: "File not found" });
         }
 
         const content = await CSV.findOne({ sheetId: sheet._id });
 
         if (!content) {
-            return res.status(404).json({ message: "File data not found" });
+            return res.status(404).json({ status:false,message: "File data not found" });
         }
 
         // pull recent history for context, oldest first
         const recentHistory = await ChatHistory.find({ userId: req.id, sheetId: sheet._id })
             .sort({ createdAt: -1 })
-            .limit(HISTORY_LIMIT);
+            .limit(HISTORY_LIMIT)
 
         const formattedHistory = recentHistory
             .reverse() 
@@ -46,11 +48,75 @@ exports.chat = async (req, res) => {
             message,
             response: reply,
         });
-
-        return res.status(200).json({ reply });
+//success repsonse
+        return res.status(200).json({status:true, response:reply ,usage});
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: "Failed to process message" });
+        return res.status(500).json({ status :false,message: "Failed to process message" });
+    }
+};
+
+//delete a single chat message
+exports.deleteMessage = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+
+        const chat = await ChatHistory.findById(chatId);
+
+        if (!chat) {
+            return res.status(404).json({ status : false,message: "Chat not found" });
+        }
+
+        if (chat.userId.toString() !== req.id) {
+            return res.status(403).json({ status :false,message: "Unauthorized to delete this chat" });
+        }
+
+        await ChatHistory.findByIdAndDelete(chatId);
+
+        return res.status(200).json({ status : true, message: "Chat deleted successfully" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status :false,message: "Failed to delete chat" });
+    }
+};
+
+// delete chat for a file
+exports.deleteConversation = async (req, res) => {
+    try {
+        const { sheetId } = req.params;
+
+        const result = await ChatHistory.deleteMany({
+            sheetId,
+            userId: req.id,
+        });
+        if(!result.deletedCount) {
+            return res.status(404).json({status : false, message: "No conversation found to delete" });
+        }
+
+        return res.status(200).json({
+            status : true,
+            message: "Conversation deleted successfully",
+            deletedCount: result.deletedCount,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status :false,message: "Failed to delete conversation" });
+    }
+};
+
+// get chat history
+exports.getChatHistory = async (req, res) => {
+    try {
+        const { sheetId } = req.params;
+
+        const chats = await ChatHistory.find({ userId: req.id, sheetId })
+            .sort({ createdAt: -1 })
+            .limit(HISTORY_LIMIT);
+
+        return res.status(200).json({ chats });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Failed to fetch chat history" });
     }
 };
