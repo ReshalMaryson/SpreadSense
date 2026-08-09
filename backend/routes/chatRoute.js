@@ -6,7 +6,10 @@ const verifyToken=require("../middlewares/auth/verifyJWT");
 const validateChatMessage=require("../middlewares/chat/validateChatMessage");
 
 // controller
-const {chat,deleteMessage,deleteConversation}=require("../controllers/chat");
+const {chat,deleteMessage,deleteConversation,getMessages}=require("../controllers/chat");
+
+//get paginated chat history
+router.get("/:sheetId/messages", verifyToken, getMessages);
 
 //send message 
 router.post("/", verifyToken, validateChatMessage, chat);

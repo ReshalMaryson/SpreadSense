@@ -7,6 +7,7 @@ const {generateInsights} = require("../services/geminiService");
 // schema 
 const Sheet = require("../models/sheetsSchema");
 const CSV=require("../models/csvSchema");
+const ChatHistory = require("../models/chatHistorySchema");
 
 // upload file and generate insights.
 exports.uploadFile = async (req, res) => {
@@ -100,5 +101,45 @@ exports.deleteFile = async (req, res) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json({status :"failure", message: "Failed to delete file" });
+    }
+};
+
+// hard delete file and its contents
+exports.deleteFileAndContent = async (req, res) => {
+    const session = await mongoose.startSession();
+
+    try {
+        session.startTransaction();
+
+        const sheet = await Sheet.findOne({
+            _id: req.params.id,
+            userId: req.id,
+        }).session(session);
+
+        if (!sheet) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: "File not found" });
+        }
+
+        const bucket = getBucket();
+
+        await bucket.delete(new mongoose.Types.ObjectId(sheet.gridFsId), { session });
+
+        await CSV.deleteOne({ sheetId: sheet._id }).session(session);
+
+        await ChatHistory.deleteMany({ sheetId: sheet._id, userId: req.id }).session(session);
+
+        await Sheet.deleteOne({ _id: sheet._id }).session(session);
+
+        await session.commitTransaction();
+
+        return res.status(200).json({ message: "File and related data deleted successfully" });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error(error);
+        return res.status(500).json({ message: "Failed to delete file" });
+    } finally {
+        session.endSession();
     }
 };

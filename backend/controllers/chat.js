@@ -120,3 +120,37 @@ exports.getChatHistory = async (req, res) => {
         return res.status(500).json({ message: "Failed to fetch chat history" });
     }
 };
+
+// get paginated chat history
+exports.getMessages = async (req, res) => {
+    try {
+        const { sheetId } = req.params;
+        const { before } = req.query; 
+
+        const sheet = await Sheet.findOne({ _id: sheetId, userId: req.id });
+
+        if (!sheet) {
+            return res.status(404).json({ status:false,message: "File not found" });
+        }
+
+        const filter = { sheetId, userId: req.id };
+
+        if (before) {
+            filter.createdAt = { $lt: new Date(before) };
+        }
+
+        const messages = await ChatHistory.find(filter)
+            .sort({ createdAt: -1 }) 
+            .limit(50);
+
+        return res.status(200).json({
+            status:true,
+            messages: messages.reverse(), 
+            hasMore: messages.length === 50, 
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({status:false, message: "Failed to fetch messages" });
+    }
+};

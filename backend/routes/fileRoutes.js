@@ -8,7 +8,7 @@ const validateFile = require("../middlewares/file/validateFile");
 
 
 // controller
-const {uploadFile,deleteFile}  = require("../controllers/file");
+const {uploadFile,deleteFile,deleteFileAndContent}  = require("../controllers/file");
 
 // upload file and generate insights.
 router.post(
@@ -22,5 +22,7 @@ router.post(
 // delete a file and its related chunks from GridFS and the database.
 router.delete("/:id", verifyToken, deleteFile);
 
+// delete a file and its related chunks from GridFS and the database.
+router.delete("/hard/:id", verifyToken, deleteFileAndContent);
 
 module.exports = router;
