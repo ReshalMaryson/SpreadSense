@@ -9,7 +9,7 @@ const validateFile = require("../middlewares/file/validateFile");
 
 // controller
 const {uploadFile,deleteFile,deleteFileAndContent}  = require("../controllers/file");
-
+const ratelimiter = require("../middlewares/rateLimit/rateLimit");
 // upload file and generate insights.
 router.post(
     "/upload",
@@ -20,9 +20,9 @@ router.post(
 );
 
 // delete a file and its related chunks from GridFS and the database.
-router.delete("/:id", verifyToken, deleteFile);
+router.delete("/:id", verifyToken, ratelimiter,deleteFile);
 
 // delete a file and its related chunks from GridFS and the database.
-router.delete("/hard/:id", verifyToken, deleteFileAndContent);
+router.delete("/hard/:id", verifyToken, ratelimiter,deleteFileAndContent);
 
 module.exports = router;

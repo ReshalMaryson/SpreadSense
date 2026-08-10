@@ -15,21 +15,22 @@ const {
 const verifyToken = require("../middlewares/auth/verifyJWT");
 const emailExists = require("../middlewares/user/emailExists");
 const {isAdmin} = require("../middlewares/auth/isAdminMiddleware");
+const ratelimiter = require("../middlewares/rateLimit/rateLimit");
 
 
 // get the details of JWT verified user
-router.get("/me", verifyToken, getVerifiedUser);
+router.get("/me", verifyToken,ratelimiter, getVerifiedUser);
 
 //get all users
-router.get("/", verifyToken,isAdmin, getAllUsers);
+router.get("/", verifyToken,ratelimiter,isAdmin, getAllUsers);
 
 //create user
-router.post("/",emailExists,createUser);
+router.post("/",ratelimiter,emailExists,createUser);
 
 // delete logged in user's account and delete its current token
-router.delete("/me", verifyToken,deleteUserAcc);
+router.delete("/me",verifyToken,ratelimiter,deleteUserAcc);
 
 // update all details of user
-router.put("/me",verifyToken,updateUser);
+router.put("/me",verifyToken,ratelimiter,updateUser);
 
 module.exports = router;
