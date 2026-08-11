@@ -61,7 +61,7 @@ export default function LandingPage() {
 
           <div className="cta-wrap">
             <Link
-              to="/upload"
+              to="/"
               className="cta-btn"
               style={{ color: "#f6f1e4" }}
               onClick={() => getUser(setUser)}

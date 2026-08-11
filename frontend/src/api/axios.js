@@ -6,6 +6,7 @@ const api = axios.create({
 });
 
 let onSessionExpired = () => {};
+
 export const registerSessionExpiredHandler = (fn) => {
   onSessionExpired = fn;
 };
@@ -17,31 +18,33 @@ api.interceptors.response.use(
 
   async (error) => {
     const originalRequest = error.config;
-
     if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      originalRequest.url !== "/auth/refresh" 
+        error.response?.status === 401 &&
+        !originalRequest._retry &&
+        !originalRequest.skipAuthRefresh &&
+        originalRequest.url !== "/auth/refresh"
     ) {
       originalRequest._retry = true;
 
       try {
         if (!refreshPromise) {
-          refreshPromise = api.post("/auth/refresh").finally(() => {
-            refreshPromise = null; // reset once settled, success or fail
-          });
+          refreshPromise = api
+            .post("/auth/refresh")
+            .finally(() => {
+              refreshPromise = null;
+            });
         }
-
         await refreshPromise;
-        return api(originalRequest);
+                return api(originalRequest);
       } catch (refreshError) {
         onSessionExpired();
+
         return Promise.reject(refreshError);
       }
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;

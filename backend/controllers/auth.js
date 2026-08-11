@@ -118,7 +118,6 @@ exports.refreshToken = async (req, res) => {
   }
 
   try {
-    // verify signature + expiry
     const tokenVerify = jwt.verify(rt, process.env.JWT_REFRESH_SECRET);
 
     const tokenExist = await refreshTokenSchema.findOne({ token: rt });

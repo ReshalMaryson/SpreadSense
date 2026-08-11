@@ -1,8 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
 nav {
   --paper: #f6f1e4;
-  --ink: #11261b;
-  --ink-soft: rgba(17, 38, 27, 0.6);
+  --ink: #11271c;
+  --ink-soft: #11261b99;
   --green: #1f8a4c;
   --green-dark: #12532d;
 
@@ -67,7 +67,13 @@ nav {
 .nav-links a:hover {
   color: var(--ink);
 }
-
+.profile-link {
+  text-decoration: none;
+  color: var(--ink-soft);
+}
+.profile-link:hover {
+  color: var(--ink);
+}
 .login-btn {
   display: inline-flex;
   align-items: center;

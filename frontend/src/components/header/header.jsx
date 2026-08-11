@@ -32,10 +32,7 @@ export default function Header() {
         </div>
         {user ? (
           <>
-            <Link
-              to="/profile"
-              style={{ textDecoration: "none", color: "#11261b" }}
-            >
+            <Link to="/profile" className="profile-link">
               Profile
             </Link>{" "}
             <button
