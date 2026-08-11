@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import "../../css/landingPage/landingPage.css";
 
 const HEADLINES = [
@@ -23,6 +24,7 @@ const HEADLINES = [
     line2: "spreadsheet than cells.",
   },
 ];
+
 export default function LandingPage() {
   const [current, setCurrent] = useState(0);
 
@@ -43,37 +45,9 @@ export default function LandingPage() {
   const headline = HEADLINES[current];
 
   return (
-    <div className="landing">
+    <div className="landing" style={{ minHeight: "89.2vh" }}>
       <div className="grid-texture" />
 
-      {/* NAV */}
-      <nav>
-        <div className="logo">
-          <svg viewBox="0 0 40 40" fill="none">
-            <g stroke="#1F8A4C" strokeWidth="3.4" strokeLinecap="round">
-              <line x1="20" y1="4" x2="20" y2="36" />
-              <line x1="4" y1="20" x2="36" y2="20" />
-              <line x1="8" y1="8" x2="32" y2="32" />
-              <line x1="32" y1="8" x2="8" y2="32" />
-            </g>
-          </svg>
-
-          <span>SpreadSense</span>
-        </div>
-
-        <div className="nav-right">
-          <div className="nav-links">
-            <a href="#how">How it works</a>
-            <a href="#profile">Profile</a>
-          </div>
-
-          <a href="#login" className="login-btn">
-            Log in
-          </a>
-        </div>
-      </nav>
-
-      {/* HERO */}
       <main>
         <section className="hero">
           <div className="headline-box">
@@ -85,7 +59,7 @@ export default function LandingPage() {
           </div>
 
           <div className="cta-wrap">
-            <a href="#upload" className="cta-btn" style={{ color: "#f6f1e4" }}>
+            <Link to="/upload" className="cta-btn" style={{ color: "#f6f1e4" }}>
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -97,7 +71,7 @@ export default function LandingPage() {
                 <path d="M12 3v13M7 8l5-5 5 5M5 21h14" />
               </svg>
               Upload your file
-            </a>
+            </Link>
 
             <div className="cta-note">
               No sign-up needed to see what it finds.
@@ -106,7 +80,6 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* FOOTER */}
       <footer>
         <div>© 2026 SpreadSense</div>
 

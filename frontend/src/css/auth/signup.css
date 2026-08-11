@@ -1,4 +1,4 @@
-.login-page {
+.signup-page {
   --paper: #f6f1e4;
   --ink: #11261b;
   --ink-soft: rgba(17, 38, 27, 0.6);
@@ -23,16 +23,16 @@
   -webkit-font-smoothing: antialiased;
 }
 
-.login-page * {
+.signup-page * {
   box-sizing: border-box;
 }
 
-.login-page button,
-.login-page input {
+.signup-page button,
+.signup-page input {
   font: inherit;
 }
 
-.login-intro {
+.signup-intro {
   display: flex;
   align-items: center;
   padding: 7vh 7vw;
@@ -40,7 +40,7 @@
 
 .intro-content {
   max-width: 600px;
-  margin-bottom: 110px;
+  margin-bottom: 270px;
 }
 
 .intro-label {
@@ -96,45 +96,47 @@
   line-height: 1.8;
 }
 
-.login-form-section {
+.signup-form-section {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8vh 7vw;
+  padding: 6vh 7vw;
 }
 
-.login-form-container {
+.signup-form-container {
   width: 100%;
-  max-width: 390px;
+  max-width: 500px;
+  transform: scale(0.9);
+  transform-origin: center center;
 }
 
-.login-heading {
+.signup-heading {
   margin-bottom: 32px;
 }
 
-.login-heading h2 {
-  margin: 0 0 8px;
+.signup-heading h2 {
+  margin: 0 0 10px;
   font-family: "Fraunces", serif;
-  font-size: 2rem;
+  font-size: 2.5rem;
   line-height: 1.1;
   font-weight: 500;
   letter-spacing: -0.025em;
 }
 
-.login-heading p {
+.signup-heading p {
   margin: 0;
   color: var(--ink-soft);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .form-group {
-  margin-bottom: 27px;
+  margin-bottom: 22px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 9px;
-  font-size: 0.85rem;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
   font-weight: 500;
 }
 
@@ -142,10 +144,11 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 52px;
+  height: 60px;
   border: 1px solid rgba(17, 38, 27, 0.18);
-  border-radius: 6px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.35);
+
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -156,14 +159,14 @@
   box-shadow: 0 0 0 3px rgba(31, 138, 76, 0.08);
 }
 
-.email-input {
+.input-wrapper.email-input {
   border-color: var(--green);
 }
 
 .input-wrapper > svg {
-  width: 19px;
-  height: 19px;
-  margin-left: 17px;
+  width: 21px;
+  height: 21px;
+  margin-left: 18px;
   flex-shrink: 0;
   color: var(--green);
 }
@@ -178,10 +181,10 @@
   min-width: 0;
   border: none;
   outline: none;
-  padding: 0 14px;
+  padding: 0 16px;
   background: transparent;
   color: var(--ink);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .input-wrapper input::placeholder {
@@ -192,10 +195,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 43px;
+  width: 46px;
   height: 100%;
   padding: 0;
-  margin-right: 3px;
+  margin-right: 4px;
   border: none;
   background: transparent;
   color: var(--ink-soft);
@@ -203,61 +206,51 @@
 }
 
 .password-toggle svg {
-  width: 19px;
-  height: 19px;
+  width: 21px;
+  height: 21px;
 }
 
-.forgot-password {
-  display: block;
-  width: fit-content;
-  margin: 14px 0 0 auto;
-  color: var(--green-dark);
-  font-size: 0.8rem;
-  text-decoration: none;
-}
-
-.forgot-password:hover,
-.signup-text a:hover {
-  text-decoration: underline;
-}
-
-.login-submit {
+.signup-submit {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+
   width: 100%;
-  height: 53px;
-  margin-top: 32px;
+  height: 60px;
+  margin-top: 28px;
+
   border: none;
-  border-radius: 6px;
+  border-radius: 7px;
   background: var(--green-dark);
   color: var(--paper);
+
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
+
   transition:
     background 0.2s ease,
     transform 0.2s ease;
 }
 
-.login-submit:hover {
+.signup-submit:hover {
   background: #0d4324;
   transform: translateY(-1px);
 }
 
-.login-submit svg {
+.signup-submit svg {
   position: absolute;
-  right: 18px;
-  width: 20px;
-  height: 20px;
+  right: 20px;
+  width: 22px;
+  height: 22px;
 }
 
 .or-divider {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin: 27px 0;
+  gap: 18px;
+  margin: 24px 0;
 }
 
 .or-divider span {
@@ -269,22 +262,26 @@
 .or-divider p {
   margin: 0;
   color: var(--ink-soft);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .google-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 11px;
+  gap: 13px;
+
   width: 100%;
-  height: 52px;
+  height: 60px;
+
   border: 1px solid rgba(17, 38, 27, 0.16);
-  border-radius: 6px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.3);
   color: var(--ink);
+
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
+
   transition:
     background 0.2s ease,
     border-color 0.2s ease;
@@ -297,31 +294,35 @@
 
 .google-icon {
   font-family: Arial, sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   font-weight: 600;
   color: #4285f4;
 }
 
-.signup-text {
-  margin: 34px 0 0;
+.login-text {
+  margin: 28px 0 0;
   text-align: center;
   color: var(--ink-soft);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
 }
 
-.signup-text a {
+.login-text a {
   margin-left: 8px;
   color: var(--green-dark);
   text-decoration: none;
   font-weight: 500;
 }
 
+.login-text a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 900px) {
-  .login-page {
+  .signup-page {
     grid-template-columns: 1fr;
   }
 
-  .login-intro {
+  .signup-intro {
     padding: 80px 8vw 40px;
   }
 
@@ -333,17 +334,18 @@
     font-size: clamp(3rem, 9vw, 4.5rem);
   }
 
-  .login-form-section {
+  .signup-form-section {
     padding: 40px 8vw 80px;
   }
 
-  .login-form-container {
-    max-width: 390px;
+  .signup-form-container {
+    max-width: 600px;
+    transform: none;
   }
 }
 
 @media (max-width: 600px) {
-  .login-intro {
+  .signup-intro {
     padding: 60px 7vw 30px;
   }
 
@@ -359,15 +361,15 @@
     margin: 28px 0 22px;
   }
 
-  .login-form-section {
+  .signup-form-section {
     padding: 30px 7vw 60px;
   }
 
-  .login-heading {
+  .signup-heading {
     margin-bottom: 28px;
   }
 
-  .login-heading h2 {
-    font-size: 2rem;
+  .signup-heading h2 {
+    font-size: 2.2rem;
   }
 }
