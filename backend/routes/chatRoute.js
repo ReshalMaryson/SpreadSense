@@ -11,16 +11,16 @@ const chatLimiter=require("../middlewares/rateLimit/rateLimit");
 const {chat,deleteMessage,deleteConversation,getMessages}=require("../controllers/chat");
 
 //get paginated chat history
-router.get("/:sheetId/messages",verifyToken,ratelimiter, getMessages);
+router.get("/:sheetId/messages",verifyToken,chatLimiter, getMessages);
 
 //send message 
 router.post("/",verifyToken, chatLimiter,dailyDbLimiter,validateChatMessage, chat);
 
 // delete single message 
-router.delete("/message/:chatId",ratelimiter, verifyToken, deleteMessage);
+router.delete("/message/:chatId",chatLimiter, verifyToken, deleteMessage);
 
 //delete a whole conversation
-router.delete("/conversation/:sheetId", verifyToken, ratelimiter,deleteConversation);
+router.delete("/conversation/:sheetId", verifyToken, chatLimiter,deleteConversation);
 
 
 module.exports=router;

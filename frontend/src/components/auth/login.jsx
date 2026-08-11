@@ -1,8 +1,46 @@
-import { useState } from "react";
 import "../../css/auth/login.css";
+import { useState, useContext, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/authContext";
+
+// Controllers
+import { loginAttempt } from "./controllers/authControllers";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errMessage, setErrorMessage] = useState("");
+
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+
+  const userCredentials = {
+    email: email.trim(),
+    password: password.trim(),
+  };
+
+  // handle login errors
+  async function handlelogin() {
+    setErrorMessage(""); // clear old error first
+    if (email.trim() === "" || password.trim() === "") {
+      setErrorMessage("Missing required fields.");
+      return;
+    }
+    await loginAttempt({ email, password }, navigate, login, setErrorMessage);
+  }
+
+  // clear the message
+  useEffect(() => {
+    if (!errMessage) return;
+    setEmail("");
+    setPassword("");
+    const timer = setTimeout(() => {
+      setErrorMessage("");
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [errMessage]);
 
   return (
     <div className="login-page">
@@ -58,7 +96,10 @@ export default function Login() {
                 <input
                   id="email"
                   type="email"
-                  placeholder="youremail@example.com"
+                  placeholder="youremail@sense.com"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -84,6 +125,10 @@ export default function Login() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
 
                 <button
@@ -126,8 +171,29 @@ export default function Login() {
                 Forgot password?
               </a>
             </div>
-
-            <button type="submit" className="login-submit">
+            <div className="show-errMessage">
+              {errMessage && (
+                <p
+                  style={{
+                    color:
+                      errMessage === "Missing required fields."
+                        ? "#ff7e65"
+                        : "#11261b",
+                    transition: "100ms",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  {errMessage}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              className="login-submit"
+              onClick={() => {
+                handlelogin();
+              }}
+            >
               <span>Log in</span>
 
               <svg

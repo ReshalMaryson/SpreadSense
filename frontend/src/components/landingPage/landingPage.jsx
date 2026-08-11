@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../../css/landingPage/landingPage.css";
 
+import { getUser } from "../user/controllers/userController";
 const HEADLINES = [
   {
     line1: "It's alive. It's here to",
@@ -26,8 +27,8 @@ const HEADLINES = [
 ];
 
 export default function LandingPage() {
+  const [user, setUser] = useState([]);
   const [current, setCurrent] = useState(0);
-
   useEffect(() => {
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -59,7 +60,12 @@ export default function LandingPage() {
           </div>
 
           <div className="cta-wrap">
-            <Link to="/upload" className="cta-btn" style={{ color: "#f6f1e4" }}>
+            <Link
+              to="/upload"
+              className="cta-btn"
+              style={{ color: "#f6f1e4" }}
+              onClick={() => getUser(setUser)}
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"

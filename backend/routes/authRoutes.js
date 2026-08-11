@@ -11,15 +11,15 @@ const verifyToken = require("../middlewares/auth/verifyJWT");
 const rateLimit = require("../middlewares/rateLimit/rateLimit");
 
 //----Login----
-router.post("/login", ratelimiter,Login);
+router.post("/login", rateLimit,Login);
 
 //-----------google login route
-router.post("/google",ratelimiter,GoogleLogin);
+router.post("/google",rateLimit,GoogleLogin);
 
 // --------------logout with JWT + sessions + cookies + refresh token---------
-router.post("/logout", verifyToken,ratelimiter,Logout);
+router.post("/logout", verifyToken,rateLimit,Logout);
 
 // -------------refresh token route----------------
-router.post("/refresh",ratelimiter,refreshToken);
+router.post("/refresh",rateLimit,refreshToken);
 
 module.exports = router;

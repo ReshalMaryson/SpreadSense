@@ -1,7 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../../css/header/header.css";
+import { useContext } from "react";
+import { AuthContext } from "../../context/authContext";
+import { logoutAttempt } from "../auth/controllers/authControllers";
 
 export default function Header() {
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   return (
     <nav>
       <div className="logo">
@@ -24,22 +29,41 @@ export default function Header() {
           <Link to="/how" style={{ textDecoration: "none" }}>
             How it works
           </Link>
-          <Link to="/profile" style={{ textDecoration: "none" }}>
-            Profile
-          </Link>
         </div>
-
-        <Link
-          to="/login"
-          className="login-btn"
-          style={{
-            textDecoration: "none",
-            color: "#f6f1e4",
-            backgroundColor: "#11261b",
-          }}
-        >
-          Log in
-        </Link>
+        {user ? (
+          <>
+            <Link
+              to="/profile"
+              style={{ textDecoration: "none", color: "#11261b" }}
+            >
+              Profile
+            </Link>{" "}
+            <button
+              className="login-btn"
+              style={{
+                textDecoration: "none",
+                color: "#f6f1e4",
+                backgroundColor: "#11261b",
+                cursor: "pointer",
+              }}
+              onClick={() => logoutAttempt(navigate, logout)}
+            >
+              Logout
+            </button>{" "}
+          </>
+        ) : (
+          <Link
+            to="/login"
+            className="login-btn"
+            style={{
+              textDecoration: "none",
+              color: "#f6f1e4",
+              backgroundColor: "#11261b",
+            }}
+          >
+            Log in
+          </Link>
+        )}
       </div>
     </nav>
   );

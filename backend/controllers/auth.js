@@ -60,7 +60,7 @@ exports.Login = async (req, res) => {
       httpOnly: true,
       secure:false, 
       sameSite: "strict",
-      maxAge: 3 * 60 * 1000, 
+   maxAge: 1 * 60 * 1000
     });
 
     // save refresh token in cookie
@@ -160,7 +160,7 @@ exports.refreshToken = async (req, res) => {
       httpOnly: true,
       secure: false,
       sameSite: "strict",
-      maxAge: 3 * 60 * 1000,
+    maxAge: 3 * 60 * 1000
     });
 
     res.cookie("refreshToken", newRefreshToken, {

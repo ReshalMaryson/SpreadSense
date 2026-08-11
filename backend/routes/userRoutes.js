@@ -19,7 +19,7 @@ const ratelimiter = require("../middlewares/rateLimit/rateLimit");
 
 
 // get the details of JWT verified user
-router.get("/me", verifyToken,ratelimiter, getVerifiedUser);
+router.get("/me", verifyToken, getVerifiedUser);
 
 //get all users
 router.get("/", verifyToken,ratelimiter,isAdmin, getAllUsers);
