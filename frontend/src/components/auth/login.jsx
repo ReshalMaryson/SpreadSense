@@ -223,7 +223,7 @@ export default function Login() {
 
           <p className="signup-text">
             Don’t have an account?
-            <a href="/signup">Sign up</a>
+            <Link to="/signup">Sign up</Link>
           </p>
         </div>
       </section>

@@ -64,7 +64,7 @@ const validate = (formData) => {
     !formData.email ||
     !formData.password 
   ) {
-    return "All fields are required";
+    return "Missing required fields.";
   }
 
   if (formData.password.length < 6) {
@@ -116,7 +116,7 @@ export const signUp = async (
       ...prev,
       password: "",
     }));
-    setMessage(err.response?.data?.message || "Something went wrong");
+    setErrMessage(err.response?.data?.message || "Something went wrong");
   } finally {
     setLoading(false);
   }

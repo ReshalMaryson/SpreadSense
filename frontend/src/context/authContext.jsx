@@ -26,9 +26,7 @@ export default function AuthProvider({ children }) {
   // Get currently authenticated user
   async function getAuthUser() {
     try {
-      const res = await api.get("/users/me", {
-        skipAuthRefresh: true,
-      });
+      const res = await api.get("/users/me");
 
       if (res.status === 200) {
         login(res.data.user);

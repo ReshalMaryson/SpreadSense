@@ -29,6 +29,7 @@
   color: var(--ink);
   font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 .landing *,

@@ -1,10 +1,51 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../../css/auth/signup.css";
+
+// controller
+import { signUp } from "../auth/controllers/authControllers";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const navigate = useNavigate();
+  const [errMessage, setErrMessage] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // handle form error and send request for sign - up
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (formData.password != confirmPassword) {
+      setErrMessage("password and confirm password did not match");
+      return;
+    }
+    await signUp(navigate, formData, setFormData, setErrMessage, setLoading);
+  }
+
+  // clear the message
+  useEffect(() => {
+    if (!errMessage) return;
+    const timer = setTimeout(() => {
+      setErrMessage("");
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [errMessage]);
 
   return (
     <div className="signup-page">
@@ -41,7 +82,11 @@ export default function Signup() {
             <p>Get started with SpreadSense.</p>
           </div>
 
-          <form>
+          <form
+            onSubmit={(e) => {
+              handleSubmit(e);
+            }}
+          >
             <div className="form-group">
               <label htmlFor="name">Full name</label>
 
@@ -58,7 +103,14 @@ export default function Signup() {
                   <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" />
                 </svg>
 
-                <input id="name" type="text" placeholder="Your name" />
+                <input
+                  id="name"
+                  type="text"
+                  placeholder="Your name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                />
               </div>
             </div>
 
@@ -82,6 +134,9 @@ export default function Signup() {
                   id="email"
                   type="email"
                   placeholder="youremail@example.com"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -107,6 +162,9 @@ export default function Signup() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                 />
 
                 <button
@@ -162,6 +220,8 @@ export default function Signup() {
                   id="confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
 
                 <button
@@ -195,7 +255,22 @@ export default function Signup() {
                 </button>
               </div>
             </div>
-
+            <div className="show-errMessage-signup">
+              {errMessage && (
+                <p
+                  style={{
+                    color:
+                      errMessage === "Missing required fields."
+                        ? "red"
+                        : "#11261b",
+                    transition: "100ms",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {errMessage}
+                </p>
+              )}
+            </div>
             <button type="submit" className="signup-submit">
               Create account
               <svg

@@ -15,10 +15,10 @@ export const getUser = async (setUser) => {
 // update user
 export const updateUser = async (updateData, setUser) => {
   try {
-    const res = await api.put("/users/me", updateData);
+    const res = await api.put("/users", updateData);
     if (res.status == 200) {
       if (setUser && typeof setUser === "function") {
-        getUser(setUser);
+         setUser(res.data.user); 
       }
       return true;
     }

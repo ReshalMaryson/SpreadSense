@@ -19,7 +19,7 @@ const ratelimiter = require("../middlewares/rateLimit/rateLimit");
 
 
 // get the details of JWT verified user
-router.get("/me", verifyToken, getVerifiedUser);
+router.get("/me", verifyToken, ratelimiter,getVerifiedUser);
 
 //get all users
 router.get("/", verifyToken,ratelimiter,isAdmin, getAllUsers);
@@ -31,6 +31,6 @@ router.post("/",ratelimiter,emailExists,createUser);
 router.delete("/me",verifyToken,ratelimiter,deleteUserAcc);
 
 // update all details of user
-router.put("/me",verifyToken,ratelimiter,updateUser);
+router.put("/",verifyToken,ratelimiter,updateUser);
 
 module.exports = router;

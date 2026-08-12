@@ -46,7 +46,7 @@ export default function LandingPage() {
   const headline = HEADLINES[current];
 
   return (
-    <div className="landing" style={{ minHeight: "89.2vh" }}>
+    <div className="landing" style={{ height: "100px", minHeight: "100vh" }}>
       <div className="grid-texture" />
 
       <main>

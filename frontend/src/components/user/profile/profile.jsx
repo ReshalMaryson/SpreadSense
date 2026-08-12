@@ -1,9 +1,10 @@
 import "../../../css/user/profile.css";
+
 import { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../context/authContext";
 
-//controllers
+// controller
 import { logoutAttempt } from "../../auth/controllers/authControllers";
 import {
   deleteAccount,
@@ -11,20 +12,43 @@ import {
   updateUser,
 } from "../controllers/userController";
 
-// helper
-import ReviewHistory from "./helpers/reviewHistory";
+const DUMMY_FILES = [
+  {
+    id: 1,
+    name: "SalesReport.xlsx",
+    size: "2.1 MB",
+    date: "August 11, 2026",
+  },
+  {
+    id: 2,
+    name: "ClassData.xlsx",
+    size: "1.4 MB",
+    date: "August 08, 2026",
+  },
+  {
+    id: 3,
+    name: "MonthlyExpenses.xlsx",
+    size: "856 KB",
+    date: "August 03, 2026",
+  },
+  {
+    id: 4,
+    name: "StudentResults.xlsx",
+    size: "3.2 MB",
+    date: "July 29, 2026",
+  },
+];
 
 export default function Profile() {
+  const [name, setName] = useState("Reshal");
+  const [email, setEmail] = useState("reshal@example.com");
+
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
-
   //error states
   const [profileFeildsError, setProfileFeildsError] = useState("");
 
-  // UI controls
-  const [activeReviewHistory, setActiveReviewHistory] = useState(false);
-  const [activePersonalInfo, setActivePersonalInfo] = useState(true);
-
+  // get logged in user and its states
   const [user, setUser] = useState(null);
   const [updateData, setUpdateData] = useState({
     name: "",
@@ -35,17 +59,16 @@ export default function Profile() {
 
   // load profile data on mount
   useEffect(() => {
-    getUser(setUser);
+    getUser(setUser); // this gets only logged in user.
   }, []);
 
+  //set the update fields as the data got from server.
   useEffect(() => {
     if (user) {
       setUpdateData({
         name: user.name || "",
         email: user.email || "",
       });
-
-      console.log(user);
     }
   }, [user]);
 
@@ -55,7 +78,6 @@ export default function Profile() {
       ...previousData,
       [event.target.name]: event.target.value,
     }));
-
     setMessage("");
   }
 
@@ -79,170 +101,221 @@ export default function Profile() {
     setTimeout(() => setMessage(""), 2000);
   }
 
-  // delete
-  function handleDelete() {
+  const handleDeleteFile = (fileName) => {
+    alert(`Delete "${fileName}"`);
+  };
+
+  const handleDownload = (fileName) => {
+    alert(`Download "${fileName}"`);
+  };
+
+  const handleDeleteAccount = () => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete your CriticAI account? This cannot be undone.",
+      "Are you sure you want to delete your account? This cannot be undone.",
     );
 
-    if (confirmed && user?._id) {
-      deleteAccount(logoutAttempt, navigate, logout);
+    if (confirmed) {
+      alert("Account deletion requested.");
     }
-  }
-
-  function showReviewHistory() {
-    setActiveReviewHistory(true);
-    setActivePersonalInfo(false);
-  }
-
-  function showPersonalInfo() {
-    setActiveReviewHistory(false);
-    setActivePersonalInfo(true);
-  }
-
-  //condional render
-  if (!user) {
-    return (
-      <main className="profile-page">
-        <div className="profile-loading">Loading your profile...</div>
-      </main>
-    );
-  }
-
-  const initials = user.name
-    ? user.name
-        .split(" ")
-        .map((word) => word[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "U";
+  };
 
   return (
-    <main className="profile-page">
-      <section className="profile-layout">
-        <aside className="profile-sidebar">
-          <div className="profile-avatar">{initials}</div>
+    <div className="profile-page">
+      <main className="profile-main">
+        <section className="profile-intro">
+          <span className="profile-label">YOUR ACCOUNT</span>
 
-          <p className="profile-label">CRITICAI MEMBER</p>
-          <h1>{user.name}</h1>
-          <p className="profile-email">{user.email}</p>
+          <h1>
+            Your <em>profile.</em>
+          </h1>
 
-          <div className="profile-divider" />
+          <p>
+            Manage your personal information and
+            <br />
+            everything you've brought into SpreadSense.
+          </p>
+        </section>
 
-          <div
-            className="profile-history"
-            role="button"
-            tabIndex={0}
-            onClick={showReviewHistory}
-            onKeyDown={(e) => e.key === "Enter" && showReviewHistory()}
-          >
-            <div className="history-icon">⌘</div>
+        <section className="profile-section">
+          <div className="section-heading">
             <div>
-              <p>Review History</p>
-              <span>Your latest code reviews are available in Generate.</span>
+              <span className="section-label">PERSONAL DETAILS</span>
+              <h2>Your information</h2>
             </div>
           </div>
 
-          <Link to="/generate" className="profile-review-link">
-            Review new code <span>→</span>
-          </Link>
-        </aside>
+          <form
+            className="details-card"
+            onSubmit={(e) => {
+              handleSave(e, updateData);
+            }}
+          >
+            <div className="profile-form-group">
+              <label htmlFor="profile-name">Full name</label>
 
-        {activeReviewHistory ? (
-          <ReviewHistory showPersonalInfo={showPersonalInfo} />
-        ) : (
-          <section className="profile-content">
-            <p className="profile-eyebrow">ACCOUNT SETTINGS</p>
-            <h2>
-              Hello, <span>{user.name.split(" ")[0]}.</span>
-            </h2>
-            <p className="profile-intro">
-              Keep your personal details up to date and manage your CriticAI
-              account.
-            </p>
+              <input
+                id="profile-name"
+                type="text"
+                name="name"
+                value={updateData.name}
+                onChange={handleChange}
+              />
+            </div>
 
-            <form
-              className="profile-form"
-              onSubmit={(e) => {
-                handleSave(e, updateData);
-              }}
-            >
-              <div className="profile-form-heading">
-                <div>
-                  <h3>Personal information</h3>
-                  <p>These details are used across your CriticAI account.</p>
-                </div>
-              </div>
-
-              <div className="profile-field">
-                <label htmlFor="name">Display name</label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={updateData.name}
-                  onChange={handleChange}
-                  placeholder="Enter your name"
-                  // required
-                />
-              </div>
-
-              <div className="profile-field">
-                <label htmlFor="email">Email address</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={updateData.email}
-                  readOnly
-                />
-                <small>Email address cannot be changed from this page.</small>
-              </div>
-              {/* <div className="field-error">{profileFeildsError}</div> */}
-              <div className="profile-form-actions">
-                {message && (
-                  <p
-                    style={{
-                      color:
-                        message === "Missing required fields."
-                          ? "#ff7e65"
-                          : "#c0e687",
-                      transition: "100ms",
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    {message}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  className="profile-save-btn"
-                  disabled={isSaving}
-                >
-                  {!isSaving ? "Save changes" : "Saving..."}
-                </button>
-              </div>
-            </form>
-
-            <div className="profile-danger-zone">
-              <div>
-                <h3>Delete account</h3>
-                <p>Permanently remove your account and all associated data.</p>
-              </div>
-
-              <button
-                type="button"
-                className="profile-delete-btn"
-                onClick={handleDelete}
+            <div className="profile-form-group">
+              <label htmlFor="profile-email">Email address</label>
+              <input
+                id="profile-email"
+                type="email"
+                name="email"
+                value={updateData.email}
+                onChange={handleChange}
+                readOnly
+              />
+              <span className="profile-email-label">
+                {" "}
+                Email can't be update from this page
+              </span>
+            </div>
+            {message && (
+              <p
+                style={{
+                  color:
+                    message === "Missing required fields."
+                      ? "#ff7e65"
+                      : "#11261b",
+                  transition: "100ms",
+                  fontSize: "0.8rem",
+                }}
               >
-                Delete account
+                {message}
+              </p>
+            )}
+            <div className="details-footer">
+              <span>Your information is private to your account.</span>
+
+              <button type="submit" className="save-button">
+                Save changes
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m13 6 6 6-6 6" />
+                </svg>
               </button>
             </div>
-          </section>
-        )}
-      </section>
-    </main>
+          </form>
+        </section>
+
+        <section className="profile-section files-section">
+          <div className="section-heading">
+            <div>
+              <span className="section-label">YOUR FILES</span>
+              <h2>Uploaded spreadsheets</h2>
+            </div>
+            <span className="file-count">{DUMMY_FILES.length} files</span>
+          </div>
+          <div className="showFileBox">
+            <div className="files-list">
+              {DUMMY_FILES.length > 0 ? (
+                DUMMY_FILES.map((file) => (
+                  <div className="file-item" key={file.id}>
+                    <div className="file-icon">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <path d="M14 2v6h6" />
+                        <path d="M8 13h8" />
+                        <path d="M8 17h5" />
+                      </svg>
+                    </div>
+
+                    <div className="file-info">
+                      <h3>{file.name}</h3>
+
+                      <p>
+                        XLSX <span>·</span> {file.size} <span>·</span> Uploaded{" "}
+                        {file.date}
+                      </p>
+                    </div>
+
+                    <div className="file-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(file.name)}
+                      >
+                        Download
+                      </button>
+
+                      <button
+                        type="button"
+                        className="file-delete"
+                        onClick={() => handleDeleteFile(file.name)}
+                        aria-label={`Delete ${file.name}`}
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4h8v2" />
+                          <path d="M19 6l-1 15H6L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No files Uploaded Yet!</p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="profile-section danger-section">
+          <div className="danger-content">
+            <span className="section-label">DANGER ZONE</span>
+
+            <h2>Delete your account</h2>
+
+            <p>
+              Permanently delete your account and all uploaded files. This
+              action cannot be undone.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="delete-account-button"
+            onClick={handleDeleteAccount}
+          >
+            Delete account
+          </button>
+        </section>
+
+        <footer className="profile-footer">
+          <span>© 2026 SpreadSense</span>
+
+          <Link to="/">Back to home</Link>
+        </footer>
+      </main>
+    </div>
   );
 }
