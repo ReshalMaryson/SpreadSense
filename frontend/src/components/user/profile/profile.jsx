@@ -6,42 +6,15 @@ import { AuthContext } from "../../../context/authContext";
 
 // controller
 import { logoutAttempt } from "../../auth/controllers/authControllers";
+import { getUserAllFiles } from "../../fileController/fileController";
 import {
   deleteAccount,
   getUser,
   updateUser,
 } from "../controllers/userController";
 
-const DUMMY_FILES = [
-  {
-    id: 1,
-    name: "SalesReport.xlsx",
-    size: "2.1 MB",
-    date: "August 11, 2026",
-  },
-  {
-    id: 2,
-    name: "ClassData.xlsx",
-    size: "1.4 MB",
-    date: "August 08, 2026",
-  },
-  {
-    id: 3,
-    name: "MonthlyExpenses.xlsx",
-    size: "856 KB",
-    date: "August 03, 2026",
-  },
-  {
-    id: 4,
-    name: "StudentResults.xlsx",
-    size: "3.2 MB",
-    date: "July 29, 2026",
-  },
-];
-
 export default function Profile() {
-  const [name, setName] = useState("Reshal");
-  const [email, setEmail] = useState("reshal@example.com");
+  const [userFiles, setUserFiles] = useState([]);
 
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
@@ -60,6 +33,7 @@ export default function Profile() {
   // load profile data on mount
   useEffect(() => {
     getUser(setUser); // this gets only logged in user.
+    getUserAllFiles(setUserFiles); // get the user files.
   }, []);
 
   //set the update fields as the data got from server.
@@ -118,7 +92,22 @@ export default function Profile() {
       alert("Account deletion requested.");
     }
   };
+  // format file size
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) {
+      return `${bytes} Bytes`;
+    }
 
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    if (bytes < 1024 * 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  };
   return (
     <div className="profile-page">
       <main className="profile-main">
@@ -218,13 +207,13 @@ export default function Profile() {
               <span className="section-label">YOUR FILES</span>
               <h2>Uploaded spreadsheets</h2>
             </div>
-            <span className="file-count">{DUMMY_FILES.length} files</span>
+            {/* <span className="file-count">{userFiles.files.length} files</span> */}
           </div>
           <div className="showFileBox">
             <div className="files-list">
-              {DUMMY_FILES.length > 0 ? (
-                DUMMY_FILES.map((file) => (
-                  <div className="file-item" key={file.id}>
+              {userFiles.length > 0 ? (
+                userFiles.map((file) => (
+                  <div className="file-item" key={file.fileid}>
                     <div className="file-icon">
                       <svg
                         viewBox="0 0 24 24"
@@ -242,18 +231,17 @@ export default function Profile() {
                     </div>
 
                     <div className="file-info">
-                      <h3>{file.name}</h3>
+                      <h3>{file.originalName}</h3>
 
                       <p>
-                        XLSX <span>·</span> {file.size} <span>·</span> Uploaded{" "}
-                        {file.date}
+                        XLSX <span>·</span> {formatFileSize(file.fileSize)}
                       </p>
                     </div>
 
                     <div className="file-actions">
                       <button
                         type="button"
-                        onClick={() => handleDownload(file.name)}
+                        onClick={() => handleDownload(file.fileid)}
                       >
                         Download
                       </button>
@@ -261,8 +249,8 @@ export default function Profile() {
                       <button
                         type="button"
                         className="file-delete"
-                        onClick={() => handleDeleteFile(file.name)}
-                        aria-label={`Delete ${file.name}`}
+                        onClick={() => handleDeleteFile(file.fileid)}
+                        aria-label={`Delete ${file.originalName}`}
                       >
                         <svg
                           viewBox="0 0 24 24"

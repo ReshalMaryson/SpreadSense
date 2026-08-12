@@ -341,7 +341,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .showFileBox {
-  height: 400px;
+  max-height: 400px;
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: #11261b99 transparent;

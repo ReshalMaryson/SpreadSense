@@ -77,6 +77,40 @@ exports.uploadFile = async (req, res) => {
   }
 };
 
+// get all files of a logged in user 
+exports.getUserFiles=async (req,res)=>{
+  try{
+      const userFiles= await Sheet.find({userId:req.id});
+      if(userFiles.length === 0){
+            return res.status(200).json({
+              status:true,
+              message:`No files Found By userid: ${id}`,
+              data:[]
+            })
+      }
+
+      // response
+      const payload = {
+        status: true,
+        message: "files fetched successfully",
+        files: userFiles.map((file) => ({
+          fileid: file._id,
+          originalName: file.originalName,
+          fileSize: file.fileSize,
+          insights: file.insights,
+        })),
+      };
+      // success response
+      return res.status(200).json(payload)
+
+  }catch (error) {
+        console.error(error);
+        return res.status(500).json({
+          status :false, 
+          message: "Server Error: Unable to fetch files",
+        });
+    }
+}
 // delete a file and its related chunks from GridFS and the database.
 exports.deleteFile = async (req, res) => {
     try {
