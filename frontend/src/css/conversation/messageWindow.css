@@ -1,0 +1,181 @@
+.convo-window {
+  --paper: #f6f1e4;
+  --paper-card: #fbf8ef;
+  --ink: #11261b;
+  --ink-soft: rgba(17, 38, 27, 0.6);
+  --ink-faint: rgba(17, 38, 27, 0.38);
+  --line: rgba(17, 38, 27, 0.12);
+  --cell: #1f8a4c;
+  --cell-deep: #12532d;
+  --cell-bright: #2faf63;
+
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.convo-window * {
+  box-sizing: border-box;
+}
+
+.convo-window button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* ---------- HEADER ---------- */
+.convo-window .chat-header {
+  padding: 18px 5vw;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.convo-window .who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.convo-window .chat-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--cell);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.convo-window .name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.convo-window .status {
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
+.convo-window .back-to-insights {
+  font-size: 0.83rem;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+}
+
+.convo-window .back-to-insights:hover {
+  color: var(--ink);
+}
+
+.convo-window .back-to-insights svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- MESSAGES ---------- */
+.convo-window .chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 5vw;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.convo-window .msg {
+  max-width: 60%;
+  padding: 13px 16px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.convo-window .msg.user {
+  align-self: flex-end;
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 14px 14px 4px 14px;
+}
+
+.convo-window .msg.file {
+  align-self: flex-start;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 500;
+  border-radius: 14px 14px 14px 4px;
+}
+
+/* ---------- INPUT ---------- */
+.convo-window .chat-input-wrap {
+  padding: 16px 5vw 22px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.convo-window .chat-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  padding: 10px 10px 10px 20px;
+}
+
+.convo-window .chat-input input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+  outline: none;
+}
+
+.convo-window .chat-input input::placeholder {
+  color: var(--ink-faint);
+}
+
+.convo-window .send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.convo-window .send-btn:hover {
+  background: var(--cell-deep);
+}
+
+.convo-window .send-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 860px) {
+  .convo-window .msg {
+    max-width: 80%;
+  }
+}

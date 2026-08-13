@@ -6,7 +6,11 @@ import { AuthContext } from "../../../context/authContext";
 
 // controller
 import { logoutAttempt } from "../../auth/controllers/authControllers";
-import { getUserAllFiles } from "../../fileController/fileController";
+import {
+  getUserAllFiles,
+  deleteUploadedFile,
+} from "../../fileController/fileController";
+
 import {
   deleteAccount,
   getUser,
@@ -32,8 +36,8 @@ export default function Profile() {
 
   // load profile data on mount
   useEffect(() => {
-    getUser(setUser); // this gets only logged in user.
-    getUserAllFiles(setUserFiles); // get the user files.
+    getUser(setUser);
+    getUserAllFiles(setUserFiles);
   }, []);
 
   //set the update fields as the data got from server.
@@ -75,8 +79,14 @@ export default function Profile() {
     setTimeout(() => setMessage(""), 2000);
   }
 
-  const handleDeleteFile = (fileName) => {
-    alert(`Delete "${fileName}"`);
+  const handleDeleteFile = async (fileid) => {
+    const res = await deleteUploadedFile(fileid);
+    if (!res) {
+      alert("failed to delete the file");
+      return;
+    }
+    getUserAllFiles(setUserFiles);
+    return;
   };
 
   const handleDownload = (fileName) => {

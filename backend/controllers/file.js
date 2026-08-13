@@ -13,12 +13,12 @@ const ChatHistory = require("../models/chatHistorySchema");
 exports.uploadFile = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+      return res.status(400).json({stauts:false, message: "No file uploaded" });
     }
 
     const MAX_SIZE = 2 * 1024 * 1024;
     if (req.file.size > MAX_SIZE) {
-      return res.status(400).json({ message: "File size cannot exceed 2 MB" });
+      return res.status(400).json({ stauts:false,message: "File size cannot exceed 2 MB" });
     }
 
     // this thing converts the parsed excel sheet to csv format.
@@ -30,6 +30,7 @@ exports.uploadFile = async (req, res) => {
     } catch (aiError) {
       console.error("Gemini insight generation failed:", aiError);
       return res.status(502).json({
+        stauts:false,
         message: "Failed to analyze the file. Please try again.",
       });
     }
@@ -60,7 +61,7 @@ exports.uploadFile = async (req, res) => {
 
       // success response with file details
       return res.status(201).json({
-        status:"success",
+        stauts:true,
         message: "File uploaded successfully",
         file,
       });
@@ -68,7 +69,7 @@ exports.uploadFile = async (req, res) => {
 
     uploadStream.on("error", (err) => {
       console.error(err);
-      return res.status(500).json({ status :"upload-error",message: "Failed to upload file" });
+      return res.status(500).json({ status :false, message: "Failed to upload file" });
     });
 
   } catch (error) {
@@ -84,7 +85,7 @@ exports.getUserFiles=async (req,res)=>{
       if(userFiles.length === 0){
             return res.status(200).json({
               status:true,
-              message:`No files Found By userid: ${id}`,
+              message:"No files Found",
               data:[]
             })
       }
@@ -120,7 +121,7 @@ exports.deleteFile = async (req, res) => {
         });
 
         if (!sheet) {
-            return res.status(404).json({status :"failure", message: "File not found" });
+            return res.status(404).json({status :false, message: "File not found" });
         }
 
         const bucket = getBucket();
@@ -130,11 +131,11 @@ exports.deleteFile = async (req, res) => {
 
         await Sheet.deleteOne({ _id: sheet._id });
 
-        return res.status(200).json({ status:"success", message: "File deleted successfully" });
+        return res.status(200).json({ status:true ,message: "File deleted successfully" });
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({status :"failure", message: "Failed to delete file" });
+        return res.status(500).json({status :false, message: "Failed to delete file" });
     }
 };
 
@@ -152,7 +153,7 @@ exports.deleteFileAndContent = async (req, res) => {
 
         if (!sheet) {
             await session.abortTransaction();
-            return res.status(404).json({ message: "File not found" });
+            return res.status(404).json({ status : false, message: "File not found" });
         }
 
         const bucket = getBucket();
@@ -167,12 +168,12 @@ exports.deleteFileAndContent = async (req, res) => {
 
         await session.commitTransaction();
 
-        return res.status(200).json({ message: "File and related data deleted successfully" });
+        return res.status(200).json({status :true, message: "File and related data deleted successfully" });
 
     } catch (error) {
         await session.abortTransaction();
         console.error(error);
-        return res.status(500).json({ message: "Failed to delete file" });
+        return res.status(500).json({ stauts:false, message: "Failed to delete file" });
     } finally {
         session.endSession();
     }

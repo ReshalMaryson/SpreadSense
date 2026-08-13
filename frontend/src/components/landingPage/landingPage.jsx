@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../../css/landingPage/landingPage.css";
 
-import { getUser } from "../user/controllers/userController";
 const HEADLINES = [
   {
     line1: "It's alive. It's here to",
@@ -61,10 +60,13 @@ export default function LandingPage() {
 
           <div className="cta-wrap">
             <Link
-              to="/"
+              to="/conversation"
               className="cta-btn"
               style={{ color: "#f6f1e4" }}
-              onClick={() => getUser(setUser)}
+              // onClick={(e) => {
+              //   e.preventDefault();
+              //   document.querySelector(".landing-page-file-input").click();
+              // }}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -78,7 +80,7 @@ export default function LandingPage() {
               </svg>
               Upload your file
             </Link>
-
+            <input type="file" hidden className="landing-page-file-input" />
             <div className="cta-note">
               No sign-up needed to see what it finds.
             </div>

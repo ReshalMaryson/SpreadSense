@@ -6,6 +6,7 @@ import LandingPage from "./components/landingPage/landingPage";
 import Login from "./components/auth/login";
 import Signup from "./components/auth/signup";
 import Profile from "./components/user/profile/profile";
+import Conversation from "./components/conversation/convoDefaultWindow";
 
 // middleware
 import RequireAuth from "./middleware/requireAuth";
@@ -19,7 +20,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
 
         <Route element={<RequireAuth />}>
-          {/* <Route path="/generate" element={<Generate />} /> */}
+          <Route path="/conversation" element={<Conversation />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>

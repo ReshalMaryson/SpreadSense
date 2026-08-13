@@ -16,3 +16,17 @@ export const getUserAllFiles = async (setUserFiles) => {
     return false;
   }
 };
+
+// delete an uploaded file(single)
+export const deleteUploadedFile = async (fileid) => {
+  try {
+    const res = await api.delete(`/files/${fileid}`);
+    if(!res.data){
+        return false;
+    }
+    return true;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+};
