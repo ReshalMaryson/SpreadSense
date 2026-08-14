@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const getBucket = require("../config/gridfs");
+const getBucket = require("../config/gridFS");
 const { Readable } = require("stream");
 const {workbookToCsv} = require("../utils/exlTocsv");
 const {generateInsights} = require("../services/geminiService");
