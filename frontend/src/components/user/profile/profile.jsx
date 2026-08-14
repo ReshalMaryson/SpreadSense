@@ -217,7 +217,7 @@ export default function Profile() {
               <span className="section-label">YOUR FILES</span>
               <h2>Uploaded spreadsheets</h2>
             </div>
-            {/* <span className="file-count">{userFiles.files.length} files</span> */}
+            <span className="file-count">{userFiles.length} files</span>
           </div>
           <div className="showFileBox">
             <div className="files-list">

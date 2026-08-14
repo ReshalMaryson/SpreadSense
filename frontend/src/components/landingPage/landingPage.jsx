@@ -63,10 +63,6 @@ export default function LandingPage() {
               to="/conversation"
               className="cta-btn"
               style={{ color: "#f6f1e4" }}
-              // onClick={(e) => {
-              //   e.preventDefault();
-              //   document.querySelector(".landing-page-file-input").click();
-              // }}
             >
               <svg
                 viewBox="0 0 24 24"

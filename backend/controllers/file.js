@@ -26,8 +26,9 @@ exports.uploadFile = async (req, res) => {
 
     let insights;
         try {
-      const { result } = await generateInsights(csv);
-      insights = result.insights;
+             const insightCount = req.totalRows < 500 ? 3 : 6;
+             const { result } = await generateInsights(csv,insightCount);
+             insights = result.insights;
     } catch (aiError) {
         console.error("Gemini insight generation failed:");
         console.error(aiError);

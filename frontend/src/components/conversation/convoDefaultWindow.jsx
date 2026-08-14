@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "../../css/conversation/convoDefaultWindow.css";
 
 // helper components
@@ -34,25 +34,44 @@ function Conversation() {
   const [activeId, setActiveId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  //server responses.
   const [fileResponse, setFileResponse] = useState([]);
   const [insights, setInsights] = useState([]);
   const [fileName, setFileName] = useState("");
 
-  const handleUploadClick = (e) => {
+  const [uploading, setUploading] = useState(false);
+  const [uploadStage, setUploadStage] = useState("uploading");
+
+  const handleUploadClick = () => {
+    if (uploading) return;
+
     document.querySelector(".upload-file-input").click();
   };
 
-  // this thing runs when upload button is clicked.
   const handleFileUpload = async (e) => {
+    setUploading(true);
+    setUploadStage("uploading");
+
+    const timer = setTimeout(() => {
+      setUploadStage("analyzing");
+    }, 3000);
+
     const res = await uploadExcelFile(e, setFileResponse);
+
+    clearTimeout(timer);
+
     if (!res) {
+      setUploading(false);
+      setUploadStage("uploading");
       return false;
     }
+
     setFileName(res.originalName);
     setInsights(res.insights);
+
+    setUploading(false);
+    setUploadStage("uploading");
     setView("insights");
-    alert("uploaded");
+
     return;
   };
 
@@ -95,6 +114,7 @@ function Conversation() {
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-header">
           <h2 className="mono">Conversations</h2>
+
           <button
             className="new-btn"
             onClick={handleNew}
@@ -111,11 +131,13 @@ function Conversation() {
             </svg>
           </button>
         </div>
+
         {DUMMY_CONVERSATIONS.length === 0 ? (
           <span style={{ fontSize: "0.8rem", paddingLeft: "1.3rem" }}>
             No Recent Convos Yet.
           </span>
         ) : null}
+
         <div className="convo-list">
           {DUMMY_CONVERSATIONS.map((c) => (
             <div
@@ -128,8 +150,10 @@ function Conversation() {
                   <span className="convo-dot" />
                   {c.fileName}
                 </div>
+
                 <div className="convo-time mono">{c.time}</div>
               </div>
+
               <div className="convo-preview">{c.preview}</div>
             </div>
           ))}
@@ -141,20 +165,34 @@ function Conversation() {
           <div className="upload-view">
             <button
               className="upload-btn"
-              onClick={(e) => handleUploadClick(e)}
+              onClick={handleUploadClick}
+              disabled={uploading}
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 3v13M7 8l5-5 5 5M5 21h14" />
-              </svg>
-              Upload your file
+              {uploading ? (
+                <>
+                  <span className="upload-spinner" />
+
+                  {uploadStage === "uploading"
+                    ? "Uploading your file..."
+                    : "Analyzing your data..."}
+                </>
+              ) : (
+                <>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 3v13M7 8l5-5 5 5M5 21h14" />
+                  </svg>
+                  Upload your file
+                </>
+              )}
             </button>
+
             <input
               type="file"
               hidden
@@ -165,7 +203,6 @@ function Conversation() {
           </div>
         )}
 
-        {/* helpers view */}
         {view === "insights" && (
           <InsightsWindow
             fileName={fileName}
