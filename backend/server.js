@@ -18,13 +18,13 @@ const fileRoutes = require("./routes/fileRoutes");
 const chatRoutes = require("./routes/chatRoute");
 
 
-//cors
-server.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  }),
-);
+  //cors
+  server.use(
+    cors({
+      origin: "http://localhost:5173",
+      credentials: true,
+    }),
+  );
 
 //middlewares
 server.use(express.json({limit:"1mb"}));
@@ -40,7 +40,7 @@ server.use("/chat", chatRoutes);
 server.get("/timeout-test", (req, res) => {
   setTimeout(() => {
     res.json({ message: "Still alive after 45 seconds" });
-  }, 45000);
+  }, 100000);
 });
 
 //server start
