@@ -48,8 +48,10 @@ Your task:
 - If the data includes a currency, unit, or similar context column, use it consistently in your findings. If none is present, state raw numbers without inventing a currency.
 - Do not mention that you are an AI, that you used code, or how you calculated anything.
 - Keep the tone clear and natural, not stiff or overly formal — like a competent colleague explaining a finding, not a written report. Stay professional; just avoid unnecessary jargon or analyst-speak when a plainer word says the same thing.
-`,
-                // tools: [{ codeExecution: {} }],
+`,              thinkingConfig: {
+                     thinkingLevel: "MEDIUM",   
+                    },
+                tools: [{ codeExecution: {} }],
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: "object",
