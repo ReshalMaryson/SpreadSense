@@ -37,12 +37,6 @@ server.use("/users", userRoutes);
 server.use("/files", fileRoutes);
 server.use("/chat", chatRoutes);
 
-server.get("/timeout-test", (req, res) => {
-  setTimeout(() => {
-    res.json({ message: "Still alive after 45 seconds" });
-  }, 100000);
-});
-
 //server start
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
