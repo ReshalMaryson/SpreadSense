@@ -14,10 +14,10 @@ const DUMMY_MESSAGES = [
 ];
 
 function MessageWindow({
-  fileName = "Q3_Sales.xlsx",
+  fileName,
   messages = DUMMY_MESSAGES,
   onSendMessage = (text) => console.log("send:", text),
-  onBackToInsights = () => console.log("back to insights"),
+  onBackToInsights,
 }) {
   const [draft, setDraft] = useState("");
 
@@ -57,7 +57,7 @@ function MessageWindow({
       </div>
 
       <div className="chat-body">
-        {messages.map((m, i) => (
+        {DUMMY_MESSAGES.map((m, i) => (
           <div className={`msg ${m.role}`} key={i}>
             {m.text}
           </div>
@@ -91,4 +91,4 @@ function MessageWindow({
   );
 }
 
-export default ConvoWindow;
+export default MessageWindow;

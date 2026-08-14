@@ -4,7 +4,7 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
 });
 
-const GEMINI_TIMEOUT_MS = 35000;
+const GEMINI_TIMEOUT_MS =35000;
 
 function withTimeout(promise, ms) {
     return Promise.race([
@@ -13,7 +13,6 @@ function withTimeout(promise, ms) {
             setTimeout(() => reject(new Error("GEMINI_TIMEOUT")), ms)
         ),
     ]);
-    return;
 }
 
 async function generateInsights(csv) {
@@ -50,7 +49,7 @@ Your task:
 - Do not mention that you are an AI, that you used code, or how you calculated anything.
 - Keep the tone clear and natural, not stiff or overly formal — like a competent colleague explaining a finding, not a written report. Stay professional; just avoid unnecessary jargon or analyst-speak when a plainer word says the same thing.
 `,
-                tools: [{ codeExecution: {} }],
+                // tools: [{ codeExecution: {} }],
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: "object",

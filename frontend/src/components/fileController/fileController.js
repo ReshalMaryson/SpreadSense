@@ -30,3 +30,23 @@ export const deleteUploadedFile = async (fileid) => {
     return false;
   }
 };
+
+// upload a file.
+export const uploadExcelFile=async(e)=>{
+   const file = e.target.files[0];
+  if (!file) return;
+  try{
+    const formData = new FormData();
+    formData.append("excelFile", file);
+
+    const response = await api.post("/files/upload", formData);
+      if(response.status != 201){ 
+        return false
+      }
+     return response.data.file;
+  }catch(error){
+     console.log(error);
+     alert(error); 
+     return false;
+    }
+}

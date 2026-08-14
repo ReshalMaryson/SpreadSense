@@ -32,6 +32,11 @@ const sheetsSchema = new mongoose.Schema(
     ],
     default: [],
     },
+    insightsStatus: {
+      type: String,
+      enum: ["processing", "ready", "failed"],
+      default: "processing",
+    }, 
   },
   { timestamps: true }
 );

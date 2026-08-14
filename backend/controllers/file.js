@@ -23,12 +23,16 @@ exports.uploadFile = async (req, res) => {
 
     // this thing converts the parsed excel sheet to csv format.
     const csv = workbookToCsv(req.parsedSheet);
+
     let insights;
         try {
       const { result } = await generateInsights(csv);
       insights = result.insights;
     } catch (aiError) {
-      console.error("Gemini insight generation failed:", aiError);
+        console.error("Gemini insight generation failed:");
+        console.error(aiError);
+        console.error("message:", aiError.message);
+        console.error("stack:", aiError.stack);
       return res.status(502).json({
         stauts:false,
         message: "Failed to analyze the file. Please try again.",
@@ -177,4 +181,147 @@ exports.deleteFileAndContent = async (req, res) => {
     } finally {
         session.endSession();
     }
+};
+
+// upload test.
+exports.uploadTest = async (req, res) => {
+  let uploadStream = null;
+
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: false,
+        message: "No file uploaded",
+      });
+    }
+
+    const MAX_SIZE = 2 * 1024 * 1024;
+
+    if (req.file.size > MAX_SIZE) {
+      return res.status(400).json({
+        status: false,
+        message: "File size cannot exceed 2 MB",
+      });
+    }
+
+    const csv = workbookToCsv(req.parsedSheet);
+
+console.time("Gemini");
+    let geminiResult;
+
+    try {
+      geminiResult = await generateInsights(csv);
+    } catch (firstError) {
+      console.error("First Gemini attempt failed. Retrying...");
+
+      try {
+        geminiResult = await generateInsights(csv);
+      } catch (retryError) {
+        console.error("Gemini failed after retry:");
+        console.error(retryError);
+
+        return res.status(502).json({
+          status: false,
+          message: "Failed to analyze the file. Please try again.",
+        });
+      }
+    }
+
+    const insights = geminiResult.result.insights;
+      console.timeEnd("Gemini");
+    
+      const session = await mongoose.startSession();
+
+    let file;
+
+    try {
+      session.startTransaction();
+
+      const bucket = getBucket();
+
+      uploadStream = bucket.openUploadStream(
+        req.file.originalname,
+        {
+          contentType: req.file.mimetype,
+        }
+      );
+
+      await new Promise((resolve, reject) => {
+        uploadStream.on("finish", resolve);
+        uploadStream.on("error", reject);
+
+        Readable
+          .from(req.file.buffer)
+          .pipe(uploadStream);
+      });
+
+      file = await Sheet.create(
+        [
+          {
+            userId: req.id,
+            originalName: req.file.originalname,
+            gridFsId: uploadStream.id,
+            mimeType: req.file.mimetype,
+            fileSize: req.file.size,
+            insights,
+            insightsStatus: "ready",
+          },
+        ],
+        { session }
+      );
+
+      file = file[0];
+
+      await CSV.create(
+        [
+          {
+            sheetId: file._id,
+            csvData: csv,
+          },
+        ],
+        { session }
+      );
+
+      await session.commitTransaction();
+
+    } catch (storageError) {
+      await session.abortTransaction();
+
+      console.error("File storage failed:");
+      console.error(storageError);
+
+      if (uploadStream?.id) {
+        try {
+          const bucket = getBucket();
+          await bucket.delete(uploadStream.id);
+        } catch (deleteError) {
+          console.error("Failed to cleanup GridFS file:", deleteError);
+        }
+      }
+
+      return res.status(500).json({
+        status: false,
+        message: "Failed to upload file",
+      });
+
+    } finally {
+      await session.endSession();
+    }
+
+    return res.status(201).json({
+      status: true,
+      message: "File uploaded successfully",
+      file,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to upload file",
+      });
+    }
+  }
 };

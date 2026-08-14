@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../../css/conversation/convoDefaultWindow.css";
 
 // helper components
 import InsightsWindow from "./helpers/insights";
+import MessageWindow from "./helpers/messages";
+
+// controller
+import { uploadExcelFile } from "../fileController/fileController";
+
 const DUMMY_CONVERSATIONS = [
   {
     sheetId: "c1",
@@ -25,27 +30,69 @@ const DUMMY_CONVERSATIONS = [
 ];
 
 function Conversation() {
-  const [view, setView] = useState("upload"); // 'upload' | 'insights' | 'chat'
+  const [view, setView] = useState("upload");
   const [activeId, setActiveId] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleUploadClick = () => {
-    // controller call goes here later — for now just a stub
-    console.log("upload clicked");
+  //server responses.
+  const [fileResponse, setFileResponse] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [fileName, setFileName] = useState("");
+
+  const handleUploadClick = (e) => {
+    document.querySelector(".upload-file-input").click();
+  };
+
+  // this thing runs when upload button is clicked.
+  const handleFileUpload = async (e) => {
+    const res = await uploadExcelFile(e, setFileResponse);
+    if (!res) {
+      return false;
+    }
+    setFileName(res.originalName);
+    setInsights(res.insights);
+    setView("insights");
+    alert("uploaded");
+    return;
   };
 
   const handleSelectConversation = (sheetId) => {
     setActiveId(sheetId);
-    // will switch to chat view + fetch messages once that piece is built
+    setSidebarOpen(false);
   };
 
   const handleNew = () => {
     setActiveId(null);
-    setView("insights");
+    setView("upload");
+    setSidebarOpen(false);
   };
 
   return (
     <div className="conversation-page">
-      <aside className="sidebar">
+      <button
+        className="sidebar-toggle"
+        onClick={() => setSidebarOpen(true)}
+        title="Show conversations"
+        aria-label="Show conversations"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 6h18M3 12h18M3 18h18" />
+        </svg>
+      </button>
+
+      <div
+        className={`sidebar-backdrop ${sidebarOpen ? "show" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-header">
           <h2 className="mono">Conversations</h2>
           <button
@@ -92,7 +139,10 @@ function Conversation() {
       <main className="main-panel">
         {view === "upload" && (
           <div className="upload-view">
-            <button className="upload-btn" onClick={handleUploadClick}>
+            <button
+              className="upload-btn"
+              onClick={(e) => handleUploadClick(e)}
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -105,10 +155,32 @@ function Conversation() {
               </svg>
               Upload your file
             </button>
+            <input
+              type="file"
+              hidden
+              className="upload-file-input"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+            />
           </div>
         )}
+
+        {/* helpers view */}
         {view === "insights" && (
-          <InsightsWindow fileName="" insights="" onTalk="" />
+          <InsightsWindow
+            fileName={fileName}
+            insights={insights}
+            onTalk={() => setView("chat")}
+          />
+        )}
+
+        {view === "chat" && (
+          <MessageWindow
+            fileName="Q3_Sales.xlsx"
+            messages=""
+            onSendMessage=""
+            onBackToInsights={() => setView("insights")}
+          />
         )}
       </main>
     </div>

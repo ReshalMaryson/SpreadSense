@@ -1,43 +1,39 @@
 import "../../../css/conversation/insights.css";
 
-const DUMMY_INSIGHTS = [
-  {
-    title: "Most Expensive Months",
-    finding:
-      "April and August combined for over 35M in revenue — nearly double any other pair of months.",
-  },
-  {
-    title: "A Clear Frontrunner",
-    finding:
-      "Kia outsold every other brand in the sheet, appearing in two out of every three sales rows.",
-  },
-  {
-    title: "One City Pulls Ahead",
-    finding:
-      "Karachi alone accounts for the largest share of total transaction value in the dataset.",
-  },
-  {
-    title: "A Slow Start",
-    finding:
-      "January brought in the lowest revenue of any month — less than half of April's total.",
-  },
-  {
-    title: "Top Individual Performer",
-    finding:
-      "One sales rep closed more total value than the next two highest combined.",
-  },
-  {
-    title: "A Model Worth Watching",
-    finding:
-      "The Sorento outsold every other model despite appearing in fewer listings overall.",
-  },
-];
+// const DUMMY_INSIGHTS = [
+//   {
+//     title: "Most Expensive Months",
+//     finding:
+//       "April and August combined for over 35M in revenue — nearly double any other pair of months.",
+//   },
+//   {
+//     title: "A Clear Frontrunner",
+//     finding:
+//       "Kia outsold every other brand in the sheet, appearing in two out of every three sales rows.",
+//   },
+//   {
+//     title: "One City Pulls Ahead",
+//     finding:
+//       "Karachi alone accounts for the largest share of total transaction value in the dataset.",
+//   },
+//   {
+//     title: "A Slow Start",
+//     finding:
+//       "January brought in the lowest revenue of any month — less than half of April's total.",
+//   },
+//   {
+//     title: "Top Individual Performer",
+//     finding:
+//       "One sales rep closed more total value than the next two highest combined.",
+//   },
+//   {
+//     title: "A Model Worth Watching",
+//     finding:
+//       "The Sorento outsold every other model despite appearing in fewer listings overall.",
+//   },
+// ];
 
-function InsightsWindow({
-  fileName = "Q3_Sales.xlsx",
-  insights = DUMMY_INSIGHTS,
-  onTalk = () => console.log("talk clicked"),
-}) {
+function InsightsWindow({ fileName, insights, onTalk }) {
   return (
     <div className="insights-window">
       <div className="insights-header">
@@ -50,7 +46,7 @@ function InsightsWindow({
 
       <div className="insights-body">
         <div className="insight-grid">
-          {DUMMY_INSIGHTS.map((ins, i) => (
+          {insights.map((ins, i) => (
             <div className="insight-card" key={i}>
               <div className="num mono">0{i + 1}</div>
               <h4>{ins.title}</h4>

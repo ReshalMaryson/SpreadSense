@@ -8,7 +8,7 @@ const validateFile = require("../middlewares/file/validateFile");
 
 
 // controller
-const {uploadFile,deleteFile,deleteFileAndContent,getUserFiles}  = require("../controllers/file");
+const {uploadFile,deleteFile,deleteFileAndContent,getUserFiles,uploadTest}  = require("../controllers/file");
 const ratelimiter = require("../middlewares/rateLimit/rateLimit");
 
 // upload file and generate insights.
@@ -17,7 +17,7 @@ router.post(
     verifyToken,
     uploadExcel,
     validateFile,
-    uploadFile
+    uploadTest
 );
 
 //get the files of logged in user

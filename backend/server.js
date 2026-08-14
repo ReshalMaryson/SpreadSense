@@ -1,5 +1,6 @@
 const express = require("express");
 const server = express();
+
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -15,6 +16,8 @@ const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const fileRoutes = require("./routes/fileRoutes");
 const chatRoutes = require("./routes/chatRoute");
+
+
 //cors
 server.use(
   cors({
@@ -33,6 +36,12 @@ server.use("/auth", authRoutes);
 server.use("/users", userRoutes);
 server.use("/files", fileRoutes);
 server.use("/chat", chatRoutes);
+
+server.get("/timeout-test", (req, res) => {
+  setTimeout(() => {
+    res.json({ message: "Still alive after 45 seconds" });
+  }, 45000);
+});
 
 //server start
 const PORT = process.env.PORT || 5000;

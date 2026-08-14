@@ -9,10 +9,12 @@
   --cell-bright: #2faf63;
 
   height: 100vh;
+  height: 100dvh;
   display: flex;
   font-family: "Inter", sans-serif;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  position: relative;
 }
 
 .conversation-page * {
@@ -41,6 +43,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  transition: transform 0.3s ease;
 }
 
 .conversation-page .sidebar-header {
@@ -200,8 +203,73 @@
   height: 16px;
 }
 
+/* ---------- MOBILE SIDEBAR TOGGLE ---------- */
+/* Hidden on desktop entirely — only rendered/relevant below the mobile breakpoint */
+.conversation-page .sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 60;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--paper);
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px -8px rgba(17, 38, 27, 0.4);
+}
+
+.conversation-page .sidebar-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.conversation-page .sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 20, 15, 0.45);
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.conversation-page .sidebar-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---------- TABLET: sidebar narrows, still side-by-side ---------- */
 @media (max-width: 860px) {
   .conversation-page .sidebar {
     width: 240px;
+  }
+}
+
+/* ---------- MOBILE: sidebar becomes a full overlay, main content goes full width ---------- */
+@media (max-width: 700px) {
+  .conversation-page .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    width: min(82vw, 300px);
+    max-width: 300px;
+    z-index: 50;
+    border-radius: 0 16px 16px 0;
+    transform: translateX(-100%);
+    box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.4);
+  }
+
+  .conversation-page .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .conversation-page .sidebar-toggle,
+  .conversation-page .sidebar-backdrop {
+    display: flex;
   }
 }
