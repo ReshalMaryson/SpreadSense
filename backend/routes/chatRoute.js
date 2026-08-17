@@ -7,14 +7,17 @@ const validateChatMessage=require("../middlewares/chat/validateChatMessage");
 const dailyDbLimiter=require("../middlewares/rateLimit/dailyLimit");
 const chatLimiter=require("../middlewares/rateLimit/rateLimit");
 
-// controller
-const {chat,deleteMessage,deleteConversation,getMessages}=require("../controllers/chat");
+// controllers
+const {chat,deleteMessage,deleteConversation,getMessages,getChatHistory}=require("../controllers/chat");
+
+//get paginated chat history
+router.get("/:sheetId",verifyToken,chatLimiter, getChatHistory);
 
 //get paginated chat history
 router.get("/:sheetId/messages",verifyToken,chatLimiter, getMessages);
 
 //send message 
-router.post("/",verifyToken, chatLimiter,dailyDbLimiter,validateChatMessage, chat);
+router.post("/",verifyToken, chatLimiter,dailyDbLimiter, validateChatMessage,chat);
 
 // delete single message 
 router.delete("/message/:chatId",chatLimiter, verifyToken, deleteMessage);

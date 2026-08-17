@@ -3,7 +3,7 @@ const MIN_MESSAGE_LENGTH = 1;
 
 function validateMessage(req, res, next) {
     const { message, sheetId } = req.body;
-
+    
     if (typeof message !== "string" || typeof sheetId !== "string") {
         return res.status(400).json({ message: "Invalid request format" });
     }

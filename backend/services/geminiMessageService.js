@@ -60,6 +60,9 @@ async function chatWithSheet(csv, userMessage, history = []) {
             contents,
             config: {
                 systemInstruction: SYSTEM_INSTRUCTION,
+                thinkingConfig: {
+                thinkingLevel: "MEDIUM",
+            },
                 tools: [{ codeExecution: {} }],
             },
         }),

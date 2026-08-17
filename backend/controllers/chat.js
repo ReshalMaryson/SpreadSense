@@ -1,15 +1,15 @@
+const mongoose=require("mongoose");
 const Sheet = require("../models/sheetsSchema");
 const CSV = require("../models/csvSchema");
 const ChatHistory = require("../models/chatHistorySchema");
 const { chatWithSheet } = require("../services/geminiMessageService");
 
-const HISTORY_LIMIT = 10; 
 
 
 // create a chat.
 exports.chat = async (req, res) => {
     try {
-        const { sheetId, message } = req.body;
+        const { sheetId,message } = req.body;
 
         if (!sheetId || !message) {
             return res.status(400).json({ status:false,message: "sheetId and message are required" });
@@ -24,7 +24,7 @@ exports.chat = async (req, res) => {
         const content = await CSV.findOne({ sheetId: sheet._id });
 
         if (!content) {
-            return res.status(404).json({ status:false,message: "File data not found" });
+            return res.status(404).json({ status:false,message: "File's CSV data not found" });
         }
 
         // pull recent history for context, oldest first
@@ -48,7 +48,7 @@ exports.chat = async (req, res) => {
             message,
             response: reply,
         });
-//success repsonse
+     //success repsonse for a dummy like you
         return res.status(200).json({status:true, response:reply ,usage});
 
     } catch (error) {
@@ -105,19 +105,58 @@ exports.deleteConversation = async (req, res) => {
     }
 };
 
-// get chat history
+// get chat history for upload window side bar
 exports.getChatHistory = async (req, res) => {
     try {
-        const { sheetId } = req.params;
+        const chats = await ChatHistory.aggregate([
+            {
+                $match: {
+                    userId: new mongoose.Types.ObjectId(req.id)
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            },
+            {
+                $group: {
+                    _id: "$sheetId",
+                    latestChat: {
+                        $first: "$$ROOT"
+                    }
+                }
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$latestChat"
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            }
+        ]);
 
-        const chats = await ChatHistory.find({ userId: req.id, sheetId })
-            .sort({ createdAt: -1 })
-            .limit(HISTORY_LIMIT);
+        await ChatHistory.populate(chats, {
+            path: "sheetId",
+            select: "originalName insights fileSize createdAt _id"
+        });
+        
+        // Handle chats whose Sheet no longer exists
+        const validChats = chats.filter(chat => chat.sheetId);
 
-        return res.status(200).json({ chats });
+        return res.status(200).json({
+            chats: validChats
+        });
+
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Failed to fetch chat history" });
+        console.error("Get chat history error:", error);
+
+        return res.status(500).json({
+            message: "Failed to fetch chat history"
+        });
     }
 };
 

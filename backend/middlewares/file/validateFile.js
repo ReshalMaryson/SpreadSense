@@ -37,12 +37,12 @@ async function validateFile(req, res, next) {
                 });
             }
         }
+
+        // calculating num of rows.
         const totalRows = rows.reduce((total, sheet) => {
             return total + sheet.data.length - 1;
         }, 0);
-
         req.totalRows = totalRows;
-           console.log("rows : " + totalRows);
         console.log("File passed validation.");
         req.parsedSheet = rows;
 
