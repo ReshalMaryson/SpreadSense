@@ -11,10 +11,10 @@ const chatLimiter=require("../middlewares/rateLimit/rateLimit");
 const {chat,deleteMessage,deleteConversation,getMessages,getChatHistory}=require("../controllers/chat");
 
 //get paginated chat history
-router.get("/:sheetId",verifyToken,chatLimiter, getChatHistory);
+router.get("/",verifyToken, getChatHistory);
 
 //get paginated chat history
-router.get("/:sheetId/messages",verifyToken,chatLimiter, getMessages);
+router.get("/:sheetId/messages",verifyToken, getMessages);
 
 //send message 
 router.post("/",verifyToken, chatLimiter,dailyDbLimiter, validateChatMessage,chat);

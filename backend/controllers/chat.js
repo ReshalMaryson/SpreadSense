@@ -164,32 +164,76 @@ exports.getChatHistory = async (req, res) => {
 exports.getMessages = async (req, res) => {
     try {
         const { sheetId } = req.params;
-        const { before } = req.query; 
+        const { before } = req.query;
 
-        const sheet = await Sheet.findOne({ _id: sheetId, userId: req.id });
+        const sheet = await Sheet.findOne({
+            _id: sheetId,
+            userId: req.id
+        });
 
         if (!sheet) {
-            return res.status(404).json({ status:false,message: "File not found" });
+            return res.status(404).json({
+                status: false,
+                message: "File not found"
+            });
         }
 
-        const filter = { sheetId, userId: req.id };
+        const filter = {
+            sheetId,
+            userId: req.id
+        };
 
         if (before) {
-            filter.createdAt = { $lt: new Date(before) };
+            filter.createdAt = {
+                $lt: new Date(before)
+            };
         }
 
         const messages = await ChatHistory.find(filter)
-            .sort({ createdAt: -1 }) 
-            .limit(50);
+            .sort({ createdAt: -1 })
+            .limit(51);
 
-        return res.status(200).json({
-            status:true,
-            messages: messages.reverse(), 
-            hasMore: messages.length === 50, 
+        if (messages.length === 0) {
+            return res.status(200).json({
+                status: true,
+                message: "No chats found",
+                messages: [],
+                hasMore: false
+            });
+        }
+
+        const hasMore = messages.length > 50;
+        const result = messages
+            .slice(0, 50)
+            .reverse();
+
+      const formattedMessages = [];
+
+        result.forEach((chat) => {
+            formattedMessages.push({
+                role: "user",
+                text: chat.message,
+                createdAt: chat.createdAt
+            });
+
+            formattedMessages.push({
+                role: "file",
+                text: chat.response,
+                createdAt: chat.createdAt
+            });
+        });
+                return res.status(200).json({
+            status: true,
+            messages: formattedMessages,
+            hasMore
         });
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({status:false, message: "Failed to fetch messages" });
+
+        return res.status(500).json({
+            status: false,
+            message: "Failed to fetch messages"
+        });
     }
 };

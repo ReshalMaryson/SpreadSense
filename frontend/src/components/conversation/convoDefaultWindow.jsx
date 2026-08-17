@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../../css/conversation/convoDefaultWindow.css";
 
 // helper components
@@ -6,28 +6,11 @@ import InsightsWindow from "./helpers/insights";
 import MessageWindow from "./helpers/messages";
 
 // controller
-import { uploadExcelFile } from "../fileController/fileController";
-
-const DUMMY_CONVERSATIONS = [
-  {
-    sheetId: "c1",
-    fileName: "ClassDataSet.xlsx",
-    preview: "Kia's your strongest seller in Karachi.",
-    time: "2h ago",
-  },
-  {
-    sheetId: "c2",
-    fileName: "Marketing_Budget.xlsx",
-    preview: "April ate up 40% of the quarter's spend.",
-    time: "Yesterday",
-  },
-  {
-    sheetId: "c3",
-    fileName: "Inventory_June.xls",
-    preview: "3 items are close to running out.",
-    time: "3 days ago",
-  },
-];
+import {
+  uploadExcelFile,
+  getChatHistory,
+  getMessages,
+} from "../fileController/fileController";
 
 function Conversation() {
   const [view, setView] = useState("upload");
@@ -40,6 +23,14 @@ function Conversation() {
 
   const [uploading, setUploading] = useState(false);
   const [uploadStage, setUploadStage] = useState("uploading");
+
+  const [history, setHistory] = useState([]);
+  const [messages, setMessages] = useState([]);
+
+  // on mount fetching
+  useEffect(() => {
+    getChatHistory(setHistory);
+  }, []);
 
   const handleUploadClick = () => {
     if (uploading) return;
@@ -75,15 +66,43 @@ function Conversation() {
     return;
   };
 
-  const handleSelectConversation = (sheetId) => {
-    setActiveId(sheetId);
+  const handleSelectConversation = async (sheetId) => {
+    // setActiveId(sheetId);
+    const res = await getMessages(sheetId, setMessages);
+    setView("chat");
     setSidebarOpen(false);
+    return;
   };
 
   const handleNew = () => {
     setActiveId(null);
     setView("upload");
     setSidebarOpen(false);
+  };
+
+  // format date and time for side bar
+  const formatTimeAgo = (date) => {
+    const now = new Date();
+    const past = new Date(date);
+
+    const diffMs = now - past;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMinutes < 1) {
+      return "just now";
+    }
+
+    if (diffMinutes < 60) {
+      return `${diffMinutes}m ago`;
+    }
+
+    if (diffHours < 24) {
+      return `${diffHours}hr ago`;
+    }
+
+    return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
   };
 
   return (
@@ -132,29 +151,35 @@ function Conversation() {
           </button>
         </div>
 
-        {DUMMY_CONVERSATIONS.length === 0 ? (
+        {history.length === 0 ? (
           <span style={{ fontSize: "0.8rem", paddingLeft: "1.3rem" }}>
             No Recent Convos Yet.
           </span>
         ) : null}
 
         <div className="convo-list">
-          {DUMMY_CONVERSATIONS.map((c) => (
+          {history.map((c) => (
             <div
-              key={c.sheetId}
-              className={`convo-item ${c.sheetId === activeId ? "active" : ""}`}
-              onClick={() => handleSelectConversation(c.sheetId)}
+              key={c.sheetId._id}
+              className={`convo-item ${c.sheetId._id === activeId ? "active" : ""}`}
+              onClick={() => {
+                handleSelectConversation(c.sheetId._id);
+                setInsights(c.sheetId.insights);
+                setFileName(c.sheetId.originalName);
+              }}
             >
               <div className="convo-top">
                 <div className="convo-name">
                   <span className="convo-dot" />
-                  {c.fileName}
+                  {c.sheetId.originalName}
                 </div>
 
-                <div className="convo-time mono">{c.time}</div>
+                <div className="convo-time mono">
+                  {formatTimeAgo(c.createdAt)}
+                </div>
               </div>
 
-              <div className="convo-preview">{c.preview}</div>
+              <div className="convo-preview">{c.message}</div>
             </div>
           ))}
         </div>
@@ -213,8 +238,8 @@ function Conversation() {
 
         {view === "chat" && (
           <MessageWindow
-            fileName="Q3_Sales.xlsx"
-            messages=""
+            fileName={fileName}
+            messages={messages}
             onSendMessage=""
             onBackToInsights={() => setView("insights")}
           />

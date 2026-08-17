@@ -15,7 +15,7 @@ const DUMMY_MESSAGES = [
 
 function MessageWindow({
   fileName,
-  messages = DUMMY_MESSAGES,
+  messages,
   onSendMessage = (text) => console.log("send:", text),
   onBackToInsights,
 }) {
@@ -30,6 +30,24 @@ function MessageWindow({
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleSend();
+  };
+
+  // format time
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  //remove markdowns
+  const cleanMessage = (text) => {
+    return text
+      .replace(/\*\*/g, "")
+      .replace(/__/g, "")
+      .replace(/^#+\s*/gm, "")
+      .replace(/`/g, "");
   };
 
   return (
@@ -57,9 +75,12 @@ function MessageWindow({
       </div>
 
       <div className="chat-body">
-        {DUMMY_MESSAGES.map((m, i) => (
+        {messages.map((m, i) => (
           <div className={`msg ${m.role}`} key={i}>
-            {m.text}
+            {cleanMessage(m.text)}
+            <p style={{ textAlign: "right", fontSize: "0.7rem" }}>
+              {formatTime(m.createdAt)}
+            </p>
           </div>
         ))}
       </div>
