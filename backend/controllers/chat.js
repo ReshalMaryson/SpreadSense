@@ -8,6 +8,7 @@ const { chatWithSheet } = require("../services/geminiMessageService");
 
 // create a chat.
 exports.chat = async (req, res) => {
+   const HISTORY_LIMIT = 10;
     try {
         const { sheetId,message } = req.body;
 

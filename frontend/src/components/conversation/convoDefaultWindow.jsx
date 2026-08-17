@@ -6,11 +6,8 @@ import InsightsWindow from "./helpers/insights";
 import MessageWindow from "./helpers/messages";
 
 // controller
-import {
-  uploadExcelFile,
-  getChatHistory,
-  getMessages,
-} from "../fileController/fileController";
+import { uploadExcelFile } from "../fileController/fileController";
+import { getChatHistory, getMessages, sendMessage } from "./controller/chat";
 
 function Conversation() {
   const [view, setView] = useState("upload");
@@ -20,6 +17,7 @@ function Conversation() {
   const [fileResponse, setFileResponse] = useState([]);
   const [insights, setInsights] = useState([]);
   const [fileName, setFileName] = useState("");
+  const [currentSheetId, setCurrentSheetId] = useState("");
 
   const [uploading, setUploading] = useState(false);
   const [uploadStage, setUploadStage] = useState("uploading");
@@ -105,6 +103,24 @@ function Conversation() {
     return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
   };
 
+  // this runs when a message is sent
+  const onSendMessage = async (message) => {
+    if (message.trim() == "") {
+      return false;
+    }
+
+    const newMessage = {
+      role: "user",
+      text: message.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    const res = await sendMessage(currentSheetId, message, setMessages);
+    return;
+  };
+
   return (
     <div className="conversation-page">
       <button
@@ -166,6 +182,7 @@ function Conversation() {
                 handleSelectConversation(c.sheetId._id);
                 setInsights(c.sheetId.insights);
                 setFileName(c.sheetId.originalName);
+                setCurrentSheetId(c.sheetId._id);
               }}
             >
               <div className="convo-top">
@@ -240,7 +257,7 @@ function Conversation() {
           <MessageWindow
             fileName={fileName}
             messages={messages}
-            onSendMessage=""
+            onSendMessage={onSendMessage}
             onBackToInsights={() => setView("insights")}
           />
         )}

@@ -1,35 +1,19 @@
 import { useState } from "react";
 import "../../../css/conversation/messageWindow.css";
 
-const DUMMY_MESSAGES = [
-  {
-    role: "file",
-    text: "I've read through this file — go ahead and ask me anything about it.",
-  },
-  { role: "user", text: "Which brand sells the most?" },
-  {
-    role: "file",
-    text: "Kia — it shows up in two out of every three sales rows, well ahead of Toyota or Honda.",
-  },
-];
-
 function MessageWindow({
   fileName,
   messages,
-  onSendMessage = (text) => console.log("send:", text),
+  onSendMessage,
   onBackToInsights,
 }) {
   const [draft, setDraft] = useState("");
 
-  const handleSend = () => {
-    const trimmed = draft.trim();
-    if (!trimmed) return;
-    onSendMessage(trimmed);
-    setDraft("");
-  };
-
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSend();
+    if (e.key === "Enter") {
+      onSendMessage(draft);
+      setDraft("");
+    }
   };
 
   // format time
@@ -94,7 +78,13 @@ function MessageWindow({
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button className="send-btn" onClick={handleSend}>
+          <button
+            className="send-btn"
+            onClick={() => {
+              onSendMessage(draft);
+              setDraft("");
+            }}
+          >
             <svg
               viewBox="0 0 24 24"
               fill="none"

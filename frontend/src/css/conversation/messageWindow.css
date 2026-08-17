@@ -89,7 +89,8 @@
 
 /* ---------- MESSAGES ---------- */
 .convo-window .chat-body {
-  flex: 1;
+  /* flex: 1; */
+  height: 580px;
   overflow-y: auto;
   padding: 28px 5vw;
   display: flex;
@@ -98,11 +99,12 @@
 }
 
 .convo-window .msg {
-  max-width: 60%;
-  padding: 13px 16px;
+  max-width: 40%;
+  padding: 0.7rem;
+  padding-bottom: 2px;
   border-radius: 14px;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .convo-window .msg.user {
