@@ -27,7 +27,7 @@ exports.getUserFiles=async (req,res)=>{
         status: true,
         message: "files fetched successfully",
         files: userFiles.map((file) => ({
-          fileid: file._id,
+          _id: file._id,
           originalName: file.originalName,
           fileSize: file.fileSize,
           insights: file.insights,
@@ -45,56 +45,39 @@ exports.getUserFiles=async (req,res)=>{
     }
 }
 
-// get all files of a logged in user 
-exports.getFilesById=async (req,res)=>{
-  try{
-     const {sheetId}=req.params;
+// search files by name
+exports.searchFilesByName = async (req, res) => {
+  try {
+    const { name } = req.params;
 
-       if(!mongoose.Types.ObjectId.isValid(sheetId)){
-        return res.status(400).json({
-          status:false,
-          message:"invalid Id"
-        })
-       }
-
-      const file= await Sheet.findOne({_id:sheetId,userId:req.id});
-
-      if(!file){
-            return res.status(200).json({
-              status:true,
-              message:"No files Found",
-              data:file
-            })
-      }
-
-      // response
-      const payload = {
+    if (!name || !name.trim()) {
+      return res.status(200).json({
         status: true,
-        message: "files fetched successfully",
-        fileid: file._id,
-        originalName: file.originalName,
-        fileSize: file.fileSize,
-        insights: file.insights,
-        // files: userFiles.map((file) => ({
-        //   fileid: file._id,
-        //   originalName: file.originalName,
-        //   fileSize: file.fileSize,
-        //   insights: file.insights,
-        // })),
-      };
-
-      // success response
-      return res.status(200).json(payload)
-
-  }catch (error) {
-        console.error(error);
-        return res.status(500).json({
-          status :false, 
-          message: "Server Error: Unable to fetch files",
-        });
+        message: "No search term provided",
+        data: [],
+      });
     }
-}
 
+    const files = await Sheet.find({
+      userId: req.id,
+      originalName: { $regex: name.trim(), $options: "i" }
+    }).select("_id originalName fileSize insights");
+
+    return res.status(200).json({
+      status: true,
+      message: "Files searched successfully",
+      data: files,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      status: false,
+      message: "Server Error: Unable to search files",
+    });
+  }
+};
 // delete a file and its related chunks from GridFS and the database.
 exports.deleteFile = async (req, res) => {
     try {

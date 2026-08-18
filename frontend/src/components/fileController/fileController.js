@@ -73,3 +73,28 @@ export const downloadFile = async (sheetId) => {
     return false;
   }
 };
+
+
+// search files by name
+export const getFilesByName = async (name, setFiles) => {
+  try {
+    if (!name || !name.trim()) {
+      return false;
+    }
+
+    const res = await api.get(
+      `/files/search/${encodeURIComponent(name.trim())}`
+    );
+
+    if (res.status === 200) {
+      setFiles(res.data.data);
+      return true;
+    }
+
+    return false;
+
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};

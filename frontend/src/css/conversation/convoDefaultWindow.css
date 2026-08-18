@@ -274,10 +274,34 @@
 .uploaded-files {
   height: 45%;
 }
+.heading-your-files-section {
+  border: 1px solid var(--paper);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 30px;
+  width: 100%;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+.heading-your-files-section img {
+  object-fit: contain;
+  margin-right: 3px;
+}
+.heading-your-files-section img.hide {
+  display: none;
+}
+.searchfileInput {
+  border: none;
+  border-bottom: 1px solid var(--paper);
+  background: none;
+  outline: none;
+  color: var(--paper);
+}
+
 .uploaded-files .heading-your-files {
   font-family: "IBM Plex Mono", monospace;
   font-weight: bold;
-  border: 1px solid var(--paper);
   opacity: 70%;
   font-size: 0.9rem;
   padding: 0.2rem;

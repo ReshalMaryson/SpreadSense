@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "../../css/conversation/convoDefaultWindow.css";
+import searchImg from "../../assets/images/magnifying-glass.png";
 
 // helper components
 import InsightsWindow from "./helpers/insights";
@@ -8,31 +9,52 @@ import MessageWindow from "./helpers/messages";
 // controller
 import { uploadExcelFile } from "../fileController/fileController";
 import { getChatHistory, getMessages, sendMessage } from "./controller/chat";
-import { getUserAllFiles } from "../fileController/fileController";
+import {
+  getUserAllFiles,
+  getFilesByName,
+} from "../fileController/fileController";
 
 function Conversation() {
-  const [view, setView] = useState("upload");
   const [activeId, setActiveId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [yourFileActive, setYourFileActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchIcon, setShowSearchIcon] = useState(true);
 
-  const [fileResponse, setFileResponse] = useState([]);
-  const [yourFiles, setYourFiles] = useState([]);
-  const [insights, setInsights] = useState([]);
   const [fileName, setFileName] = useState("");
   const [currentSheetId, setCurrentSheetId] = useState("");
-
-  const [uploading, setUploading] = useState(false);
+  const [view, setView] = useState("upload");
   const [uploadStage, setUploadStage] = useState("uploading");
+  const [search, setSearch] = useState("");
 
   const [history, setHistory] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [fileResponse, setFileResponse] = useState([]);
+  const [yourFiles, setYourFiles] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [searchFiles, setSearchFiles] = useState([]);
 
   // on mount fetching
   useEffect(() => {
     getChatHistory(setHistory);
     getUserAllFiles(setYourFiles);
   }, []);
+
+  //search file bebounce
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!search.trim()) {
+        setIsSearching(false);
+        setSearchFiles([]);
+        return;
+      }
+      setIsSearching(true);
+      await getFilesByName(search, setSearchFiles);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const handleUploadClick = () => {
     if (uploading) return;
@@ -125,16 +147,27 @@ function Conversation() {
     return;
   };
 
+  //handle file search
+  const handleFileSearch = async (name, setFiles) => {
+    const res = await getFilesByName(name, setYourFiles);
+  };
+
   // your file section
+  const filesToDisplay = search.trim() ? searchFiles : yourFiles;
   // handle yourfile section
   const openYourFile = () => {
     setYourFileActive((prev) => !prev);
+  };
+
+  const handleSearchIcon = () => {
+    setShowSearchIcon((prev) => !prev);
   };
 
   // handle chat button.
   const handleChat = () => {
     setView("chat");
   };
+
   return (
     <div className="conversation-page">
       <button
@@ -215,32 +248,52 @@ function Conversation() {
           ))}
         </div>
         <div className="uploaded-files">
-          <p className="heading-your-files" onClick={openYourFile}>
-            Your Files
-          </p>
+          <div className="heading-your-files-section" onClick={openYourFile}>
+            <p className="heading-your-files">Your Files</p>
+            <img
+              src={searchImg}
+              width="18"
+              alt=""
+              onClick={handleSearchIcon}
+              className={!showSearchIcon ? "hide" : ""}
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="type file name.."
+              hidden={showSearchIcon}
+              className="searchfileInput"
+            />
+          </div>
+
+          {yourFiles.length === 0 && searchFiles.length === 0 ? (
+            <p>No Files Uploaded yet!</p>
+          ) : null}
           <div className={yourFileActive ? "files active" : "files"}>
-            {yourFiles.length > 0 ? (
-              yourFiles.map((file) => {
-                return (
-                  <>
-                    <div className="yourfile">
-                      <p key={file.fileid}>{file.originalName}</p>
-                      <button
-                        onClick={() => {
-                          handleSelectConversation(file.fileid);
-                          setInsights(file.insights);
-                          setFileName(file.originalName);
-                          setCurrentSheetId(file.fileid);
-                        }}
-                      >
-                        Talk
-                      </button>
-                    </div>
-                  </>
-                );
-              })
+            {search.trim() && (
+              <button onClick={() => setSearch("")}>Clear Search</button>
+            )}
+
+            {filesToDisplay.length > 0 ? (
+              filesToDisplay.map((file) => (
+                <div className="yourfile" key={file._id}>
+                  <p>{file.originalName}</p>
+
+                  <button
+                    onClick={() => {
+                      handleSelectConversation(file._id);
+                      setInsights(file.insights);
+                      setFileName(file.originalName);
+                      setCurrentSheetId(file._id);
+                    }}
+                  >
+                    Talk
+                  </button>
+                </div>
+              ))
             ) : (
-              <p>np uploaded files yet</p>
+              <p>No files found.</p>
             )}
           </div>
         </div>
