@@ -21,7 +21,7 @@ router.post(
 );
 
 //get the files of logged in user
-router.get("/me",verifyToken,getUserFiles);
+router.get("/myfiles",verifyToken,getUserFiles);
 
 // delete a file and its related chunks from GridFS and the database.
 router.delete("/:id", verifyToken, ratelimiter,deleteFile);

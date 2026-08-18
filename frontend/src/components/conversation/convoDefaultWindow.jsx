@@ -8,13 +8,16 @@ import MessageWindow from "./helpers/messages";
 // controller
 import { uploadExcelFile } from "../fileController/fileController";
 import { getChatHistory, getMessages, sendMessage } from "./controller/chat";
+import { getUserAllFiles } from "../fileController/fileController";
 
 function Conversation() {
   const [view, setView] = useState("upload");
   const [activeId, setActiveId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [yourFileActive, setYourFileActive] = useState(false);
 
   const [fileResponse, setFileResponse] = useState([]);
+  const [yourFiles, setYourFiles] = useState([]);
   const [insights, setInsights] = useState([]);
   const [fileName, setFileName] = useState("");
   const [currentSheetId, setCurrentSheetId] = useState("");
@@ -28,11 +31,11 @@ function Conversation() {
   // on mount fetching
   useEffect(() => {
     getChatHistory(setHistory);
+    getUserAllFiles(setYourFiles);
   }, []);
 
   const handleUploadClick = () => {
     if (uploading) return;
-
     document.querySelector(".upload-file-input").click();
   };
 
@@ -64,8 +67,8 @@ function Conversation() {
     return;
   };
 
+  // get the messages for the current file
   const handleSelectConversation = async (sheetId) => {
-    // setActiveId(sheetId);
     const res = await getMessages(sheetId, setMessages);
     setView("chat");
     setSidebarOpen(false);
@@ -121,6 +124,16 @@ function Conversation() {
     return;
   };
 
+  // your file section
+  // handle yourfile section
+  const openYourFile = () => {
+    setYourFileActive((prev) => !prev);
+  };
+
+  // handle chat button.
+  const handleChat = () => {
+    setView("chat");
+  };
   return (
     <div className="conversation-page">
       <button
@@ -200,6 +213,27 @@ function Conversation() {
             </div>
           ))}
         </div>
+        <div className="uploaded-files">
+          <p className="heading-your-files" onClick={openYourFile}>
+            Your Files
+          </p>
+          <div className={yourFileActive ? "files active" : "files"}>
+            {yourFiles.length > 0 ? (
+              yourFiles.map((file) => {
+                return (
+                  <>
+                    <div className="yourfile">
+                      <p key={file.fileid}>{file.originalName}</p>
+                      <button onClick={handleChat}>Talk</button>
+                    </div>
+                  </>
+                );
+              })
+            ) : (
+              <p>np uploaded files yet</p>
+            )}
+          </div>
+        </div>
       </aside>
 
       <main className="main-panel">
@@ -249,6 +283,7 @@ function Conversation() {
           <InsightsWindow
             fileName={fileName}
             insights={insights}
+            SheetId={currentSheetId}
             onTalk={() => setView("chat")}
           />
         )}

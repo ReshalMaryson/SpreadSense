@@ -86,7 +86,8 @@
 }
 
 .conversation-page .convo-list {
-  flex: 1;
+  /* flex: 1; */
+  height: 450px;
   overflow-y: auto;
   padding: 4px 10px 16px;
 }
@@ -268,6 +269,56 @@
     transform: rotate(360deg);
   }
 }
+
+/* yourfiles */
+.uploaded-files {
+  height: 45%;
+}
+.uploaded-files .heading-your-files {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: bold;
+  border: 1px solid var(--paper);
+  opacity: 70%;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+.files {
+  border: none;
+  height: 0%;
+  overflow: hidden;
+  transition: 200ms ease;
+}
+.files.active {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0.2rem;
+  height: 100%;
+  overflow: auto;
+  transition: 200ms ease;
+}
+.files .yourfile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem;
+  border: 1px solid var(--paper);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  height: 35px;
+  cursor: pointer;
+}
+
+.files .yourfile button {
+  background-color: var(--cell);
+  height: 20px;
+  width: 20%;
+  border-radius: 5px;
+  color: var(--paper);
+  font-size: 0.7rem;
+}
+
 /* ---------- TABLET: sidebar narrows, still side-by-side ---------- */
 @media (max-width: 860px) {
   .conversation-page .sidebar {

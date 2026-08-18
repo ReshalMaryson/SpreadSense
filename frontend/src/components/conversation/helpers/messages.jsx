@@ -16,7 +16,7 @@ function MessageWindow({
     }
   };
 
-  // format time
+  // format time`
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString([], {
       hour: "numeric",

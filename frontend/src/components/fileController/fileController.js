@@ -3,7 +3,7 @@ import api from "../../api/axios";
 // get loggedin user's uploaded files.
 export const getUserAllFiles = async (setUserFiles) => {
   try {
-    const { data } = await api.get("/files/me");
+    const { data } = await api.get("/files/myfiles");
     if (!data.files || data.files.length === 0) {
       console.log("no file found");
       setUserFiles([]);
