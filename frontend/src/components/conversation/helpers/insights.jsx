@@ -34,7 +34,6 @@ import "../../../css/conversation/insights.css";
 // ];
 
 function InsightsWindow({ fileName, insights, onTalk, SheetId }) {
-  alert(SheetId);
   return (
     <div className="insights-window">
       <div className="insights-header">

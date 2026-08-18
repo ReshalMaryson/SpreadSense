@@ -57,6 +57,7 @@ function Conversation() {
       return false;
     }
 
+    getUserAllFiles(setYourFiles);
     setFileName(res.originalName);
     setInsights(res.insights);
 
@@ -224,7 +225,16 @@ function Conversation() {
                   <>
                     <div className="yourfile">
                       <p key={file.fileid}>{file.originalName}</p>
-                      <button onClick={handleChat}>Talk</button>
+                      <button
+                        onClick={() => {
+                          handleSelectConversation(file.fileid);
+                          setInsights(file.insights);
+                          setFileName(file.originalName);
+                          setCurrentSheetId(file.fileid);
+                        }}
+                      >
+                        Talk
+                      </button>
                     </div>
                   </>
                 );

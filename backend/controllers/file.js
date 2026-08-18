@@ -254,3 +254,70 @@ console.time("Gemini");
     }
   }
 };
+
+// download file
+exports.downloadFile = async (req, res) => {
+    try {
+        const { sheetId } = req.params;
+        
+        const file = await Sheet.findOne({
+            _id: sheetId,
+            userId: req.id
+        });
+
+        if (!file) {
+            return res.status(404).json({
+                status: false,
+                message: "File not found"
+            });
+        }
+
+        if (!file.gridFsId) {
+            return res.status(404).json({
+                status: false,
+                message: "File data not found"
+            });
+        }
+
+        const bucket = getBucket();
+
+        const downloadStream = bucket.openDownloadStream(
+            new mongoose.Types.ObjectId(file.gridFsId)
+        );
+
+        res.setHeader(
+            "Content-Type",
+            file.mimeType || "application/octet-stream"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${file.originalName}"`
+        );
+
+        downloadStream.on("error", (error) => {
+            console.error("GridFS download error:", error);
+
+            if (!res.headersSent) {
+                return res.status(404).json({
+                    status: false,
+                    message: "File data not found"
+                });
+            }
+
+            res.end();
+        });
+
+        downloadStream.pipe(res);
+
+    } catch (error) {
+        console.error("Download error:", error);
+
+        if (!res.headersSent) {
+            return res.status(500).json({
+                status: false,
+                message: "Failed to download file"
+            });
+        }
+    }
+};

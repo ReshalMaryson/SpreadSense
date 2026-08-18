@@ -8,7 +8,6 @@ try{
 
       return false;
     }
-alert(message);
  const payload={
         sheetId,
         message:message.trim(),
