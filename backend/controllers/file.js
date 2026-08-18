@@ -44,6 +44,57 @@ exports.getUserFiles=async (req,res)=>{
         });
     }
 }
+
+// get all files of a logged in user 
+exports.getFilesById=async (req,res)=>{
+  try{
+     const {sheetId}=req.params;
+
+       if(!mongoose.Types.ObjectId.isValid(sheetId)){
+        return res.status(400).json({
+          status:false,
+          message:"invalid Id"
+        })
+       }
+
+      const file= await Sheet.findOne({_id:sheetId,userId:req.id});
+
+      if(!file){
+            return res.status(200).json({
+              status:true,
+              message:"No files Found",
+              data:file
+            })
+      }
+
+      // response
+      const payload = {
+        status: true,
+        message: "files fetched successfully",
+        fileid: file._id,
+        originalName: file.originalName,
+        fileSize: file.fileSize,
+        insights: file.insights,
+        // files: userFiles.map((file) => ({
+        //   fileid: file._id,
+        //   originalName: file.originalName,
+        //   fileSize: file.fileSize,
+        //   insights: file.insights,
+        // })),
+      };
+
+      // success response
+      return res.status(200).json(payload)
+
+  }catch (error) {
+        console.error(error);
+        return res.status(500).json({
+          status :false, 
+          message: "Server Error: Unable to fetch files",
+        });
+    }
+}
+
 // delete a file and its related chunks from GridFS and the database.
 exports.deleteFile = async (req, res) => {
     try {

@@ -8,7 +8,7 @@ const validateFile = require("../middlewares/file/validateFile");
 
 
 // controller
-const {uploadFile,deleteFile,deleteFileAndContent,getUserFiles,downloadFile}  = require("../controllers/file");
+const {uploadFile,deleteFile,deleteFileAndContent,getUserFiles,downloadFile,getFilesById}  = require("../controllers/file");
 const ratelimiter = require("../middlewares/rateLimit/rateLimit");
 
 // upload file and generate insights.
@@ -22,6 +22,9 @@ router.post(
 
 //get the files of logged in user
 router.get("/myfiles",verifyToken,getUserFiles);
+
+//get file by id
+router.get("/:sheetId",verifyToken,getFilesById);
 
 // download
 router.get("/download/:sheetId",verifyToken,ratelimiter,downloadFile);
