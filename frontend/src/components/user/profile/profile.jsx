@@ -9,6 +9,7 @@ import { logoutAttempt } from "../../auth/controllers/authControllers";
 import {
   getUserAllFiles,
   deleteUploadedFile,
+  downloadFile,
 } from "../../fileController/fileController";
 
 import {
@@ -79,6 +80,7 @@ export default function Profile() {
     setTimeout(() => setMessage(""), 2000);
   }
 
+  // delete a file from profile
   const handleDeleteFile = async (fileid) => {
     const res = await deleteUploadedFile(fileid);
     if (!res) {
@@ -89,10 +91,7 @@ export default function Profile() {
     return;
   };
 
-  const handleDownload = (fileName) => {
-    alert(`Download "${fileName}"`);
-  };
-
+  // delete an user account parmanently
   const handleDeleteAccount = () => {
     const confirmed = window.confirm(
       "Are you sure you want to delete your account? This cannot be undone.",
@@ -102,6 +101,16 @@ export default function Profile() {
       alert("Account deletion requested.");
     }
   };
+
+  // download an uploaded file form profile
+  const handleDownload = async (sheetId) => {
+    const res = await downloadFile(sheetId);
+    if (!res) {
+      alert("failed to download. Please try again");
+    }
+    return;
+  };
+
   // format file size
   const formatFileSize = (bytes) => {
     if (bytes < 1024) {

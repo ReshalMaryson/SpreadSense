@@ -51,3 +51,25 @@ export const uploadExcelFile=async(e)=>{
     }
 }
 
+//download an uploaded file
+export const downloadFile = async (sheetId) => {
+  try {
+    const res = await api.get(`/files/download/${sheetId}`, {
+      responseType: "blob",
+    });
+
+    const url = URL.createObjectURL(res.data);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "download.xlsx";
+    a.click();
+
+    URL.revokeObjectURL(url);
+
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};
