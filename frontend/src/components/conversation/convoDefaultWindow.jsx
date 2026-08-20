@@ -99,6 +99,7 @@ function Conversation() {
   };
 
   const handleNew = () => {
+    setCurrentSheetId("");
     setActiveId(null);
     setView("upload");
     setSidebarOpen(false);
@@ -144,6 +145,7 @@ function Conversation() {
     setMessages((prev) => [...prev, newMessage]);
 
     const res = await sendMessage(currentSheetId, message, setMessages);
+    getChatHistory(setHistory);
     return;
   };
 
@@ -161,6 +163,7 @@ function Conversation() {
 
   const handleSearchIcon = () => {
     setShowSearchIcon((prev) => !prev);
+    setYourFileActive(true);
   };
 
   // handle chat button.
@@ -248,8 +251,10 @@ function Conversation() {
           ))}
         </div>
         <div className="uploaded-files">
-          <div className="heading-your-files-section" onClick={openYourFile}>
-            <p className="heading-your-files">Your Files</p>
+          <div className="heading-your-files-section">
+            <p className="heading-your-files" onClick={openYourFile}>
+              Your Files
+            </p>
             <img
               src={searchImg}
               width="18"
@@ -257,24 +262,37 @@ function Conversation() {
               onClick={handleSearchIcon}
               className={!showSearchIcon ? "hide" : ""}
             />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="type file name.."
-              hidden={showSearchIcon}
-              className="searchfileInput"
-            />
           </div>
 
           {yourFiles.length === 0 && searchFiles.length === 0 ? (
             <p>No Files Uploaded yet!</p>
           ) : null}
           <div className={yourFileActive ? "files active" : "files"}>
-            {search.trim() && (
-              <button onClick={() => setSearch("")}>Clear Search</button>
-            )}
-
+            <div className="search-header">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="type file name.."
+                hidden={showSearchIcon}
+                className="searchfileInput"
+              />
+              <button
+                className="clear-search"
+                onClick={() => {
+                  setSearch("");
+                  setShowSearchIcon(true);
+                }}
+                hidden={showSearchIcon}
+              >
+                X
+              </button>
+            </div>
+            {searchFiles != "" ? (
+              <span style={{ fontSize: "0.8rem", textAlign: "center" }}>
+                files found
+              </span>
+            ) : null}
             {filesToDisplay.length > 0 ? (
               filesToDisplay.map((file) => (
                 <div className="yourfile" key={file._id}>
@@ -286,6 +304,8 @@ function Conversation() {
                       setInsights(file.insights);
                       setFileName(file.originalName);
                       setCurrentSheetId(file._id);
+
+                      console.log(currentSheetId);
                     }}
                   >
                     Talk
@@ -293,7 +313,15 @@ function Conversation() {
                 </div>
               ))
             ) : (
-              <p>No files found.</p>
+              <span
+                style={{
+                  fontSize: "0.8rem",
+                  textAlign: "center",
+                  color: "#9e9e9e",
+                }}
+              >
+                No files found.
+              </span>
             )}
           </div>
         </div>

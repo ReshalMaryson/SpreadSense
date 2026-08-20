@@ -31,6 +31,7 @@
 /* ---------- HEADER ---------- */
 .convo-window .chat-header {
   padding: 18px 5vw;
+  border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;

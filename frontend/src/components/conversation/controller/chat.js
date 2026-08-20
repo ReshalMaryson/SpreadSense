@@ -5,8 +5,7 @@ export const sendMessage=async (sheetId,message,setMessages)=>{
 try{
     if(!sheetId || !message || message.trim() === ""){
         alert("please provide required values");
-
-      return false;
+        return false;
     }
  const payload={
         sheetId,

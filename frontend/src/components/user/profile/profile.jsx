@@ -260,7 +260,7 @@ export default function Profile() {
                     <div className="file-actions">
                       <button
                         type="button"
-                        onClick={() => handleDownload(file.fileid)}
+                        onClick={() => handleDownload(file._id)}
                       >
                         Download
                       </button>
@@ -268,7 +268,7 @@ export default function Profile() {
                       <button
                         type="button"
                         className="file-delete"
-                        onClick={() => handleDeleteFile(file.fileid)}
+                        onClick={() => handleDeleteFile(file._id)}
                         aria-label={`Delete ${file.originalName}`}
                       >
                         <svg

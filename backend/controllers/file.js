@@ -168,7 +168,8 @@ exports.uploadFile = async (req, res) => {
 
     const csv = workbookToCsv(req.parsedSheet);
 
-console.time("Gemini");
+// console.time("Gemini");
+const geminiStart = performance.now();
     let geminiResult;
 
     try {
@@ -189,10 +190,10 @@ console.time("Gemini");
         });
       }
     }
-
+    const elapsed = ((performance.now() - geminiStart) / 1000).toFixed(2);
+    console.log(`Gemini: ${elapsed}s`);
     const insights = geminiResult.result.insights;
-      console.timeEnd("Gemini");
-    
+      // console.timeEnd("Gemini");
       const session = await mongoose.startSession();
 
     let file;

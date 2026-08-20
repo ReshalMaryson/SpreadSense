@@ -275,7 +275,8 @@
   height: 45%;
 }
 .heading-your-files-section {
-  border: 1px solid var(--paper);
+  border-top: 1px solid var(--paper);
+  border-bottom: 1px solid var(--paper);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -284,43 +285,69 @@
   padding: 0.2rem;
   cursor: pointer;
 }
-.heading-your-files-section img {
-  object-fit: contain;
-  margin-right: 3px;
-}
-.heading-your-files-section img.hide {
-  display: none;
-}
-.searchfileInput {
-  border: none;
-  border-bottom: 1px solid var(--paper);
-  background: none;
-  outline: none;
-  color: var(--paper);
-}
 
 .uploaded-files .heading-your-files {
   font-family: "IBM Plex Mono", monospace;
   font-weight: bold;
   opacity: 70%;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   padding: 0.2rem;
   cursor: pointer;
+  width: 100%;
 }
 .files {
   border: none;
   height: 0%;
   overflow: hidden;
   transition: 200ms ease;
+  margin-top: 10px;
 }
 .files.active {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 0.2rem;
+  padding: 0.1rem;
   height: 100%;
   overflow: auto;
   transition: 200ms ease;
+}
+.search-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding-right: 0.1rem;
+}
+.heading-your-files-section img {
+  object-fit: contain;
+  margin-right: 3px;
+  cursor: pointer;
+}
+.heading-your-files-section img.hide {
+  display: none;
+}
+.searchfileInput {
+  border: none;
+  border: 1px solid var(--paper);
+  border-radius: 3px;
+  background: none;
+  outline: none;
+  color: var(--paper);
+  width: 90%;
+  padding: 0.2rem;
+  transition: 200ms ease;
+}
+.search-header .clear-search {
+  background-color: var(--paper);
+  height: 20px;
+  width: 10%;
+  border-radius: 3px;
+  color: var(--ink);
+  font-size: 0.7rem;
+  transition: 200ms ease;
+}
+.search-header .clear-search.hide {
+  display: none;
 }
 .files .yourfile {
   display: flex;

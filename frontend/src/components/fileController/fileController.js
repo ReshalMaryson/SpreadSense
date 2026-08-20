@@ -74,7 +74,6 @@ export const downloadFile = async (sheetId) => {
   }
 };
 
-
 // search files by name
 export const getFilesByName = async (name, setFiles) => {
   try {
