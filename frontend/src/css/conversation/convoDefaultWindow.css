@@ -307,8 +307,9 @@
   flex-direction: column;
   gap: 10px;
   padding: 0.1rem;
-  height: 100%;
-  overflow: auto;
+  height: 60%;
+  max-height: 90%;
+  overflow-y: auto;
   transition: 200ms ease;
 }
 .search-header {

@@ -80,6 +80,7 @@ function Conversation() {
     }
 
     getUserAllFiles(setYourFiles);
+    setCurrentSheetId(res._id);
     setFileName(res.originalName);
     setInsights(res.insights);
 
@@ -256,6 +257,7 @@ function Conversation() {
               Your Files
             </p>
             <img
+              hidden={yourFiles.length > 1 ? false : true}
               src={searchImg}
               width="18"
               alt=""
@@ -264,9 +266,6 @@ function Conversation() {
             />
           </div>
 
-          {yourFiles.length === 0 && searchFiles.length === 0 ? (
-            <p>No Files Uploaded yet!</p>
-          ) : null}
           <div className={yourFileActive ? "files active" : "files"}>
             <div className="search-header">
               <input
@@ -316,11 +315,9 @@ function Conversation() {
               <span
                 style={{
                   fontSize: "0.8rem",
-                  textAlign: "center",
-                  color: "#9e9e9e",
                 }}
               >
-                No files found.
+                No Files Uploaded yet!
               </span>
             )}
           </div>

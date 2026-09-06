@@ -1,240 +1,309 @@
-const mongoose=require("mongoose");
+const mongoose = require("mongoose");
 const Sheet = require("../models/sheetsSchema");
 const CSV = require("../models/csvSchema");
 const ChatHistory = require("../models/chatHistorySchema");
-const { chatWithSheet } = require("../services/geminiMessageService");
 
-
-
-// create a chat.
-exports.chat = async (req, res) => {
-   const HISTORY_LIMIT = 10;
-    try {
-        const { sheetId,message } = req.body;
-
-        if (!sheetId || !message) {
-            return res.status(400).json({ status:false,message: "sheetId and message are required" });
-        }
-
-        const sheet = await Sheet.findOne({ _id: sheetId, userId: req.id });
-
-        if (!sheet) {
-            return res.status(404).json({ status:false,message: "File not found" });
-        }
-
-        const content = await CSV.findOne({ sheetId: sheet._id });
-
-        if (!content) {
-            return res.status(404).json({ status:false,message: "File's CSV data not found" });
-        }
-
-        // pull recent history for context, oldest first
-        const recentHistory = await ChatHistory.find({ userId: req.id, sheetId: sheet._id })
-            .sort({ createdAt: -1 })
-            .limit(HISTORY_LIMIT)
-
-        const formattedHistory = recentHistory
-            .reverse() 
-            .flatMap((entry) => [
-                { role: "user", text: entry.message },
-                { role: "model", text: entry.response },
-            ]);
-
-            // this is the call to the service don't touch it.
-        const { reply, usage } = await chatWithSheet(content.csvData, message, formattedHistory);
-
-        await ChatHistory.create({
-            userId: req.id,
-            sheetId: sheet._id,
-            message,
-            response: reply,
-        });
-     //success repsonse for a dummy like you
-        return res.status(200).json({status:true, response:reply ,usage});
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ status :false,message: "Failed to process message" });
-    }
-};
+const { generateQuery } = require("../services/geminiQueryService");
+const { humanizeResult } = require("../services/Humanizeservice ");
 
 //delete a single chat message
 exports.deleteMessage = async (req, res) => {
-    try {
-        const { chatId } = req.params;
+  try {
+    const { chatId } = req.params;
 
-        const chat = await ChatHistory.findById(chatId);
+    const chat = await ChatHistory.findById(chatId);
 
-        if (!chat) {
-            return res.status(404).json({ status : false,message: "Chat not found" });
-        }
-
-        if (chat.userId.toString() !== req.id) {
-            return res.status(403).json({ status :false,message: "Unauthorized to delete this chat" });
-        }
-
-        await ChatHistory.findByIdAndDelete(chatId);
-
-        return res.status(200).json({ status : true, message: "Chat deleted successfully" });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ status :false,message: "Failed to delete chat" });
+    if (!chat) {
+      return res.status(404).json({ status: false, message: "Chat not found" });
     }
+
+    if (chat.userId.toString() !== req.id) {
+      return res
+        .status(403)
+        .json({ status: false, message: "Unauthorized to delete this chat" });
+    }
+
+    await ChatHistory.findByIdAndDelete(chatId);
+
+    return res
+      .status(200)
+      .json({ status: true, message: "Chat deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Failed to delete chat" });
+  }
 };
 
 // delete chat for a file
 exports.deleteConversation = async (req, res) => {
-    try {
-        const { sheetId } = req.params;
+  try {
+    const { sheetId } = req.params;
 
-        const result = await ChatHistory.deleteMany({
-            sheetId,
-            userId: req.id,
-        });
-        if(!result.deletedCount) {
-            return res.status(404).json({status : false, message: "No conversation found to delete" });
-        }
-
-        return res.status(200).json({
-            status : true,
-            message: "Conversation deleted successfully",
-            deletedCount: result.deletedCount,
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ status :false,message: "Failed to delete conversation" });
+    const result = await ChatHistory.deleteMany({
+      sheetId,
+      userId: req.id,
+    });
+    if (!result.deletedCount) {
+      return res
+        .status(404)
+        .json({ status: false, message: "No conversation found to delete" });
     }
+
+    return res.status(200).json({
+      status: true,
+      message: "Conversation deleted successfully",
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Failed to delete conversation" });
+  }
 };
 
 // get chat history for upload window side bar
 exports.getChatHistory = async (req, res) => {
-    try {
-        const chats = await ChatHistory.aggregate([
-            {
-                $match: {
-                    userId: new mongoose.Types.ObjectId(req.id)
-                }
-            },
-            {
-                $sort: {
-                    createdAt: -1
-                }
-            },
-            {
-                $group: {
-                    _id: "$sheetId",
-                    latestChat: {
-                        $first: "$$ROOT"
-                    }
-                }
-            },
-            {
-                $replaceRoot: {
-                    newRoot: "$latestChat"
-                }
-            },
-            {
-                $sort: {
-                    createdAt: -1
-                }
-            }
-        ]);
+  try {
+    const chats = await ChatHistory.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(req.id),
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $group: {
+          _id: "$sheetId",
+          latestChat: {
+            $first: "$$ROOT",
+          },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$latestChat",
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ]);
 
-        await ChatHistory.populate(chats, {
-            path: "sheetId",
-            select: "originalName insights fileSize createdAt _id"
-        });
-        
-        // Handle chats whose Sheet no longer exists
-        const validChats = chats.filter(chat => chat.sheetId);
+    await ChatHistory.populate(chats, {
+      path: "sheetId",
+      select: "originalName insights fileSize createdAt _id",
+    });
 
-        return res.status(200).json({
-            chats: validChats
-        });
+    // Handle chats whose Sheet no longer exists
+    const validChats = chats.filter((chat) => chat.sheetId);
 
-    } catch (error) {
-        console.error("Get chat history error:", error);
+    return res.status(200).json({
+      chats: validChats,
+    });
+  } catch (error) {
+    console.error("Get chat history error:", error);
 
-        return res.status(500).json({
-            message: "Failed to fetch chat history"
-        });
-    }
+    return res.status(500).json({
+      message: "Failed to fetch chat history",
+    });
+  }
 };
 
 // get paginated chat history
 exports.getMessages = async (req, res) => {
-    try {
-        const { sheetId } = req.params;
-        const { before } = req.query;
+  try {
+    const { sheetId } = req.params;
+    const { before } = req.query;
 
-        const sheet = await Sheet.findOne({
-            _id: sheetId,
-            userId: req.id
-        });
+    const sheet = await Sheet.findOne({
+      _id: sheetId,
+      userId: req.id,
+    });
 
-        if (!sheet) {
-            return res.status(404).json({
-                status: false,
-                message: "File not found"
-            });
-        }
-
-        const filter = {
-            sheetId,
-            userId: req.id
-        };
-
-        if (before) {
-            filter.createdAt = {
-                $lt: new Date(before)
-            };
-        }
-
-        const messages = await ChatHistory.find(filter)
-            .sort({ createdAt: -1 })
-            .limit(51);
-
-        if (messages.length === 0) {
-            return res.status(200).json({
-                status: true,
-                message: "No chats found",
-                messages: [],
-                hasMore: false
-            });
-        }
-
-        const hasMore = messages.length > 50;
-        const result = messages
-            .slice(0, 50)
-            .reverse();
-
-      const formattedMessages = [];
-
-        result.forEach((chat) => {
-            formattedMessages.push({
-                role: "user",
-                text: chat.message,
-                createdAt: chat.createdAt
-            });
-
-            formattedMessages.push({
-                role: "file",
-                text: chat.response,
-                createdAt: chat.createdAt
-            });
-        });
-                return res.status(200).json({
-            status: true,
-            messages: formattedMessages,
-            hasMore
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        return res.status(500).json({
-            status: false,
-            message: "Failed to fetch messages"
-        });
+    if (!sheet) {
+      return res.status(404).json({
+        status: false,
+        message: "File not found",
+      });
     }
+
+    const filter = {
+      sheetId,
+      userId: req.id,
+    };
+
+    if (before) {
+      filter.createdAt = {
+        $lt: new Date(before),
+      };
+    }
+
+    const messages = await ChatHistory.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(51);
+
+    if (messages.length === 0) {
+      return res.status(200).json({
+        status: true,
+        message: "No chats found",
+        messages: [],
+        hasMore: false,
+      });
+    }
+
+    const hasMore = messages.length > 50;
+    const result = messages.slice(0, 50).reverse();
+
+    const formattedMessages = [];
+
+    result.forEach((chat) => {
+      formattedMessages.push({
+        role: "user",
+        text: chat.message,
+        createdAt: chat.createdAt,
+      });
+
+      formattedMessages.push({
+        role: "file",
+        text: chat.response,
+        createdAt: chat.createdAt,
+      });
+    });
+    return res.status(200).json({
+      status: true,
+      messages: formattedMessages,
+      hasMore,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      status: false,
+      message: "Failed to fetch messages",
+    });
+  }
+};
+
+//send a message and create chat.
+exports.chat = async (req, res) => {
+  const HISTORY_LIMIT = 10;
+  try {
+    const { sheetId, message } = req.body;
+
+    if (!sheetId || !message) {
+      return res
+        .status(400)
+        .json({ status: false, message: "sheetId and message are required" });
+    }
+
+    const sheet = await Sheet.findOne({ _id: sheetId, userId: req.id });
+
+    if (!sheet) {
+      return res.status(404).json({ status: false, message: "File not found" });
+    }
+
+    const content = await CSV.findOne({ sheetId: sheet._id });
+
+    if (!content) {
+      return res
+        .status(404)
+        .json({ status: false, message: "File's CSV data not found" });
+    }
+
+    // pull recent history for context, oldest first
+    const recentHistory = await ChatHistory.find({
+      userId: req.id,
+      sheetId: sheet._id,
+    })
+      .sort({ createdAt: -1 })
+      .limit(HISTORY_LIMIT);
+
+    const formattedHistory = recentHistory.reverse().flatMap((entry) => [
+      { role: "user", text: entry.message },
+      { role: "model", text: entry.response },
+    ]);
+
+    const columnsResponse = await fetch(
+      `${process.env.QUERY_ENGINE_URL}/columns`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sheetId: sheet._id.toString(),
+          csv: content.csvData,
+        }),
+      },
+    );
+
+    const { columns } = await columnsResponse.json();
+
+    let query;
+    try {
+      query = await generateQuery(message, columns);
+      console.log(query);
+    } catch (queryError) {
+      console.error("Gemini query generation failed:", queryError);
+      return res.status(502).json({
+        status: false,
+        message: "Could not understand that question against your data.",
+      });
+    }
+
+    const engineResponse = await fetch(
+      `${process.env.QUERY_ENGINE_URL}/execute`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sheetId: sheet._id.toString(),
+          csv: content.csvData,
+          steps: query.steps,
+          final_step: query.final_step,
+        }),
+      },
+    );
+
+    const engineResult = await engineResponse.json();
+
+    if (engineResult.status === "error") {
+      return res.status(400).json({
+        status: false,
+        message: engineResult.detail || engineResult.error,
+      });
+    }
+
+    let reply;
+    try {
+      reply = await humanizeResult(message, engineResult.data);
+    } catch (humanizeError) {
+      console.error("Humanize step failed:", humanizeError);
+      // fallback to raw JSON if humanization fails
+      reply = `Answer: ${JSON.stringify(engineResult.data)}`;
+    }
+
+    await ChatHistory.create({
+      userId: req.id,
+      sheetId: sheet._id,
+      message,
+      response: reply,
+    });
+
+    return res
+      .status(200)
+      .json({ status: true, response: reply, engineResult });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Failed to process message" });
+  }
 };

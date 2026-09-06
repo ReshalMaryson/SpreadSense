@@ -42,7 +42,7 @@ exports.createUser = async (req, res) => {
       name: req.body.name,
       email: req.body.email,
       password: hashedPass,
-      role:req.body.role ?req.body.role:"user" 
+      role: "user",
     };
 
     const userAdded = await User.create(payload);
@@ -54,12 +54,14 @@ exports.createUser = async (req, res) => {
       });
     }
     userAdded.password = "";
+
     return res.status(201).json({
       status: "success",
       message: "created",
       data: userAdded,
     });
   } catch (err) {
+    console.log(err);
     return res.status(500).json({
       status: "failure",
       message: "Server Error " + err.message,
@@ -100,7 +102,7 @@ exports.getVerifiedUser = async (req, res) => {
 exports.deleteUserAcc = async (req, res) => {
   try {
     const deleteduser = await User.findByIdAndDelete({ _id: req.id });
-    
+
     if (!deleteduser) {
       return res.status(404).json({
         status: "failure",
@@ -136,7 +138,7 @@ exports.updateUser = async (req, res) => {
 
     const payload = {
       name: req.body.name,
-      email:req.body.email
+      email: req.body.email,
     };
     // update in the DB
     const userupdated = await User.findByIdAndUpdate(Id, payload, {

@@ -13,6 +13,9 @@ const csvSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        // new
+        cacheName: { type: String, default: null },   
+        cacheExpiresAt: { type: Date, default: null }
     },
     { timestamps: true }
 );

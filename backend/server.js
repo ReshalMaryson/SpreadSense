@@ -17,19 +17,17 @@ const authRoutes = require("./routes/authRoutes");
 const fileRoutes = require("./routes/fileRoutes");
 const chatRoutes = require("./routes/chatRoute");
 
-
-  //cors
-  server.use(
-    cors({
-      origin: "http://localhost:5173",
-      credentials: true,
-    }),
-  );
+//cors
+server.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 //middlewares
-server.use(express.json({limit:"1mb"}));
+server.use(express.json({ limit: "1mb" }));
 server.use(cookieParser());
-
 
 // server routes.
 server.use("/auth", authRoutes);
