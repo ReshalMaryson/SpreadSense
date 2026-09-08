@@ -219,7 +219,8 @@ exports.chat = async (req, res) => {
         .json({ status: false, message: "File's CSV data not found" });
     }
 
-    // pull recent history for context, oldest first
+    // pull recent history for context, oldest first — also tells generateQuery
+    // whether this is the very first message (empty array) and lets it match tone.
     const recentHistory = await ChatHistory.find({
       userId: req.id,
       sheetId: sheet._id,
@@ -243,12 +244,11 @@ exports.chat = async (req, res) => {
         }),
       },
     );
-
     const { columns } = await columnsResponse.json();
 
     let query;
     try {
-      query = await generateQuery(message, columns);
+      query = await generateQuery(message, columns, formattedHistory);
       console.log(query);
     } catch (queryError) {
       console.error("Gemini query generation failed:", queryError);
@@ -258,36 +258,57 @@ exports.chat = async (req, res) => {
       });
     }
 
-    const engineResponse = await fetch(
-      `${process.env.QUERY_ENGINE_URL}/execute`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sheetId: sheet._id.toString(),
-          csv: content.csvData,
-          steps: query.steps,
-          final_step: query.final_step,
-        }),
-      },
-    );
-
-    const engineResult = await engineResponse.json();
-
-    if (engineResult.status === "error") {
-      return res.status(400).json({
-        status: false,
-        message: engineResult.detail || engineResult.error,
-      });
-    }
-
     let reply;
-    try {
-      reply = await humanizeResult(message, engineResult.data);
-    } catch (humanizeError) {
-      console.error("Humanize step failed:", humanizeError);
-      // fallback to raw JSON if humanization fails
-      reply = `Answer: ${JSON.stringify(engineResult.data)}`;
+    let engineResult = null;
+
+    if (query.type === "conversation") {
+      // No data was touched — Gemini decided this wasn't a real data question.
+      reply = query.reply;
+    } else {
+      const executeResponse = await fetch(
+        `${process.env.QUERY_ENGINE_URL}/execute`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sheetId: sheet._id.toString(),
+            csv: content.csvData,
+            steps: query.steps,
+            final_step: query.final_step,
+          }),
+        },
+      );
+      engineResult = await executeResponse.json();
+      //console.log("from chat.js, engineResult:\n", engineResult);
+
+      if (engineResult.status === "error") {
+        return res.status(400).json({
+          status: false,
+          message: engineResult.detail || engineResult.error,
+        });
+      }
+
+      // If it's a compound (multi-fact) answer, translate the raw step-id
+      // keys into the real labels Gemini supplied — e.g. { s2: {...}, s3: {...} }
+      // becomes { "sales rep name": ..., "their total revenue": ... }. Without
+      // this, humanizeResult only sees opaque ids and either leaks them
+      // verbatim or has to guess a label, which has produced wrong labels
+      // before (e.g. calling a ratings count "views").
+      let dataForHumanize = engineResult.data;
+      if (engineResult.kind === "multiple" && query.final_labels) {
+        dataForHumanize = {};
+        for (const [stepId, valueObj] of Object.entries(engineResult.data)) {
+          const label = query.final_labels[stepId] || stepId;
+          dataForHumanize[label] = valueObj.data;
+        }
+      }
+
+      try {
+        reply = await humanizeResult(message, dataForHumanize);
+      } catch (humanizeError) {
+        console.error("Humanize step failed:", humanizeError);
+        reply = `Answer: ${JSON.stringify(engineResult.data)}`;
+      }
     }
 
     await ChatHistory.create({

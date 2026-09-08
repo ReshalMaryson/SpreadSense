@@ -24,6 +24,13 @@ def op_groupby_agg(df, params):
     return df.groupby(params["group_by"])[params["metric"]].agg(agg)
 
 
+def op_aggregate(df, params):
+    agg = params["agg"]
+    if agg not in VALID_AGGS:
+        raise ValueError(f"agg '{agg}' not in {VALID_AGGS}")
+    return df[params["column"]].agg(agg)
+
+
 def op_filter_eq(df, params):
     return df[df[params["column"]] == params["value"]]
 
@@ -32,11 +39,17 @@ def op_filter_isin(df, params):
     return df[df[params["column"]].isin(params["values"])]
 
 
-def op_filter_cmp(df, params):
+def op_filter_cmp(data, params):
+    # FIX: previously dataframe-only, which crashed on "which cities didn't
+    # reach 2 million in revenue?" — that needs filtering a groupby_agg
+    # SERIES by its own values (no "column" involved), a different, equally
+    # valid case from filtering original rows by a column's value.
     operator = params["operator"]
     if operator not in VALID_CMP_OPS:
         raise ValueError(f"operator '{operator}' not in {list(VALID_CMP_OPS)}")
-    return df[VALID_CMP_OPS[operator](df[params["column"]], params["value"])]
+    if isinstance(data, pd.Series):
+        return data[VALID_CMP_OPS[operator](data, params["value"])]
+    return data[VALID_CMP_OPS[operator](data[params["column"]], params["value"])]
 
 
 def op_sort_values(data, params):
@@ -97,6 +110,7 @@ def op_get_value(data, params):
 
 OPS = {
     "groupby_agg": op_groupby_agg,
+    "aggregate": op_aggregate,
     "filter_eq": op_filter_eq,
     "filter_isin": op_filter_isin,
     "filter_cmp": op_filter_cmp,
@@ -112,11 +126,12 @@ OPS = {
 }
 
 DATAFRAME_INPUT_OPS = {
-    "groupby_agg", "filter_eq", "filter_isin", "filter_cmp",
+    "groupby_agg", "aggregate", "filter_eq", "filter_isin",
     "value_counts", "count_rows",
 }
 SERIES_INPUT_OPS = {"idxmax", "idxmin", "max_value", "min_value"}
-EITHER_INPUT_OPS = {"sort_values", "top_n", "get_value"}
+# these accept either shape
+EITHER_INPUT_OPS = {"sort_values", "top_n", "get_value", "filter_cmp"}
 
 COLUMN_PARAM_KEYS = {"column"}
 COLUMN_LIST_PARAM_KEYS = {"group_by"}

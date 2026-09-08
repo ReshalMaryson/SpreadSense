@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 const getBucket = require("../config/gridFS");
 const { Readable } = require("stream");
 const { workbookToCsv } = require("../utils/exlTocsv");
-const { generateInsights } = require("../services/geminiService");
+// const { generateInsights } = require("../services/geminiService");
+const { generateInsights } = require("../services/InsightsService");
 
 // schema
 const Sheet = require("../models/sheetsSchema");
@@ -156,6 +157,154 @@ exports.deleteFileAndContent = async (req, res) => {
 };
 
 // upload file and generate insights.
+// exports.uploadFile = async (req, res) => {
+//   let uploadStream = null;
+
+//   try {
+//     if (!req.file) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "No file uploaded",
+//       });
+//     }
+
+//     const MAX_SIZE = 2 * 1024 * 1024;
+
+//     if (req.file.size > MAX_SIZE) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "File size cannot exceed 2 MB",
+//       });
+//     }
+
+//     // NOTE for CSV : this method formats the CSV putting first row as the sheet name and from 2nd row the headers of the sheet starts and rest of the data is below it. this is being handled by the query engine for now, it skips the first row , but when changing is done in workbookToCsv function, the query engine should be updated accordingly to handle the new format.
+//     const csv = workbookToCsv(req.parsedSheet);
+
+//     const geminiStart = performance.now();
+//     let geminiResult;
+
+//     try {
+//       geminiResult = await generateInsights(csv, req.totalRows);
+//     } catch (firstError) {
+//       console.error("First Gemini attempt failed. Retrying...");
+
+//       try {
+//         geminiResult = await generateInsights(csv, req.totalRows);
+//       } catch (retryError) {
+//         console.error("Gemini failed after retry:");
+//         console.error(retryError);
+
+//         return res.status(502).json({
+//           status: false,
+//           message: "Failed to analyze the file. Please try again.",
+//         });
+//       }
+//     }
+//     const elapsed = ((performance.now() - geminiStart) / 1000).toFixed(2);
+//     console.log(`Gemini: ${elapsed}s`);
+
+//     const insights = geminiResult.result.insights;
+//     const session = await mongoose.startSession();
+
+//     let file;
+
+//     try {
+//       session.startTransaction();
+
+//       const bucket = getBucket();
+
+//       uploadStream = bucket.openUploadStream(req.file.originalname, {
+//         contentType: req.file.mimetype,
+//       });
+
+//       await new Promise((resolve, reject) => {
+//         uploadStream.on("finish", resolve);
+//         uploadStream.on("error", reject);
+
+//         Readable.from(req.file.buffer).pipe(uploadStream);
+//       });
+
+//       file = await Sheet.create(
+//         [
+//           {
+//             userId: req.id,
+//             originalName: req.file.originalname,
+//             gridFsId: uploadStream.id,
+//             mimeType: req.file.mimetype,
+//             fileSize: req.file.size,
+//             insights,
+//             insightsStatus: "rea  dy",
+//           },
+//         ],
+//         { session },
+//       );
+
+//       file = file[0];
+
+//       await CSV.create(
+//         [
+//           {
+//             sheetId: file._id,
+//             csvData: csv,
+//           },
+//         ],
+//         { session },
+//       );
+
+//       await session.commitTransaction();
+//     } catch (storageError) {
+//       await session.abortTransaction();
+
+//       console.error("File storage failed:");
+//       console.error(storageError);
+
+//       if (uploadStream?.id) {
+//         try {
+//           const bucket = getBucket();
+//           await bucket.delete(uploadStream.id);
+//         } catch (deleteError) {
+//           console.error("Failed to cleanup GridFS file:", deleteError);
+//         }
+//       }
+
+//       return res.status(500).json({
+//         status: false,
+//         message: "Failed to upload file",
+//       });
+//     } finally {
+//       await session.endSession();
+//     }
+
+//     // Warm the Python cache so the first chat message is fast. Non-blocking
+//     // and never fails the upload — worst case, /execute lazy-loads it later.
+//     const QUERY_ENGINE_URL =
+//       process.env.QUERY_ENGINE_URL || "http://localhost:8000";
+//     fetch(`${QUERY_ENGINE_URL}/load`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ sheetId: file._id.toString(), csv }),
+//     }).catch((err) => {
+//       console.error("Failed to warm Python cache:", err.message);
+//     });
+
+//     return res.status(201).json({
+//       status: true,
+//       message: "File uploaded successfully",
+//       file,
+//     });
+//   } catch (error) {
+//     console.error(error);
+
+//     if (!res.headersSent) {
+//       return res.status(500).json({
+//         status: false,
+//         message: "Failed to upload file",
+//       });
+//     }
+//   }
+// };
+
+// upload file and generate insights (synchronous — now engine-backed, no codeExecution).
 exports.uploadFile = async (req, res) => {
   let uploadStream = null;
 
@@ -176,22 +325,35 @@ exports.uploadFile = async (req, res) => {
       });
     }
 
-    // NOTE for CSV : this method formats the CSV putting first row as the sheet name and from 2nd row the headers of the sheet starts and rest of the data is below it. this is being handled by the query engine for now, it skips the first row , but when changing is done in workbookToCsv function, the query engine should be updated accordingly to handle the new format.
+    // NOTE for CSV: this method formats the CSV putting first row as the sheet name and from
+    // 2nd row the headers of the sheet start. The query engine skips the first row to handle
+    // this — if this changes, update the query engine's parse_csv accordingly.
     const csv = workbookToCsv(req.parsedSheet);
 
-    const geminiStart = performance.now();
-    let geminiResult;
+    const sheetId = new mongoose.Types.ObjectId();
+
+    const insightsStart = performance.now();
+    let insightsResult;
 
     try {
-      geminiResult = await generateInsights(csv, req.totalRows);
+      insightsResult = await generateInsights(
+        sheetId.toString(),
+        csv,
+        req.totalRows,
+      );
     } catch (firstError) {
-      console.error("First Gemini attempt failed. Retrying...");
-
+      console.error(
+        "First insight generation attempt failed. Retrying...",
+        firstError,
+      );
       try {
-        geminiResult = await generateInsights(csv, req.totalRows);
+        insightsResult = await generateInsights(
+          sheetId.toString(),
+          csv,
+          req.totalRows, // this is being generted in validation middleware.
+        );
       } catch (retryError) {
-        console.error("Gemini failed after retry:");
-        console.error(retryError);
+        console.error("Insight generation failed after retry:", retryError);
 
         return res.status(502).json({
           status: false,
@@ -199,10 +361,11 @@ exports.uploadFile = async (req, res) => {
         });
       }
     }
-    const elapsed = ((performance.now() - geminiStart) / 1000).toFixed(2);
-    console.log(`Gemini: ${elapsed}s`);
 
-    const insights = geminiResult.result.insights;
+    const elapsed = ((performance.now() - insightsStart) / 1000).toFixed(2);
+    console.log(`Insights (engine-backed): ${elapsed}s`);
+
+    const insights = insightsResult.result.insights;
     const session = await mongoose.startSession();
 
     let file;
@@ -226,6 +389,7 @@ exports.uploadFile = async (req, res) => {
       file = await Sheet.create(
         [
           {
+            _id: sheetId,
             userId: req.id,
             originalName: req.file.originalname,
             gridFsId: uploadStream.id,
@@ -274,18 +438,6 @@ exports.uploadFile = async (req, res) => {
       await session.endSession();
     }
 
-    // Warm the Python cache so the first chat message is fast. Non-blocking
-    // and never fails the upload — worst case, /execute lazy-loads it later.
-    const QUERY_ENGINE_URL =
-      process.env.QUERY_ENGINE_URL || "http://localhost:8000";
-    fetch(`${QUERY_ENGINE_URL}/load`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sheetId: file._id.toString(), csv }),
-    }).catch((err) => {
-      console.error("Failed to warm Python cache:", err.message);
-    });
-
     return res.status(201).json({
       status: true,
       message: "File uploaded successfully",
@@ -302,152 +454,6 @@ exports.uploadFile = async (req, res) => {
     }
   }
 };
-
-// exports.uploadFile = async (req, res) => {
-//   let uploadStream = null;
-
-//   try {
-//     if (!req.file) {
-//       return res.status(400).json({
-//         status: false,
-//         message: "No file uploaded",
-//       });
-//     }
-
-//     const MAX_SIZE = 2 * 1024 * 1024;
-
-//     if (req.file.size > MAX_SIZE) {
-//       return res.status(400).json({
-//         status: false,
-//         message: "File size cannot exceed 2 MB",
-//       });
-//     }
-
-//     const csv = workbookToCsv(req.parsedSheet);
-
-//     const geminiStart = performance.now();
-//         let geminiResult;
-
-//         try {
-
-//           geminiResult = await generateInsights(csv, req.totalRows);
-//         } catch (firstError) {
-//           console.error("First Gemini attempt failed. Retrying...");
-
-//           try {
-//             geminiResult = await generateInsights(csv, req.totalRows);
-//           } catch (retryError) {
-//             console.error("Gemini failed after retry:");
-//             console.error(retryError);
-
-//             return res.status(502).json({
-//               status: false,
-//               message: "Failed to analyze the file. Please try again.",
-//             });
-//           }
-//         }
-//     const elapsed = ((performance.now() - geminiStart) / 1000).toFixed(2);
-//     console.log(`Gemini: ${elapsed}s`);
-
-//     const insights = geminiResult.result.insights;
-//       const session = await mongoose.startSession();
-
-//     let file;
-
-//     try {
-//       session.startTransaction();
-
-//       const bucket = getBucket();
-
-//       uploadStream = bucket.openUploadStream(
-//         req.file.originalname,
-//         {
-//           contentType: req.file.mimetype,
-//         }
-//       );
-
-//       await new Promise((resolve, reject) => {
-//         uploadStream.on("finish", resolve);
-//         uploadStream.on("error", reject);
-
-//         Readable
-//           .from(req.file.buffer)
-//           .pipe(uploadStream);
-//       });
-
-//       file = await Sheet.create(
-//         [
-//           {
-//             userId: req.id,
-//             originalName: req.file.originalname,
-//             gridFsId: uploadStream.id,
-//             mimeType: req.file.mimetype,
-//             fileSize: req.file.size,
-//             insights,
-//             insightsStatus: "ready",
-//           },
-//         ],
-//         { session }
-//       );
-
-//       file = file[0];
-
-//       await CSV.create(
-//         [
-//           {
-//             sheetId: file._id,
-//             csvData: csv,
-//           },
-//         ],
-//         { session }
-//       );
-
-//       await session.commitTransaction();
-
-//     } catch (storageError) {
-//       await session.abortTransaction();
-
-//       console.error("File storage failed:");
-//       console.error(storageError);
-
-//       if (uploadStream?.id) {
-//         try {
-//           const bucket = getBucket();
-//           await bucket.delete(uploadStream.id);
-//         } catch (deleteError) {
-//           console.error("Failed to cleanup GridFS file:", deleteError);
-//         }
-//       }
-
-//       return res.status(500).json({
-//         status: false,
-//         message: "Failed to upload file",
-//       });
-
-//     } finally {
-//       await session.endSession();
-//     }
-
-//     return res.status(201).json({
-//       status: true,
-//       message: "File uploaded successfully",
-//       file,
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-
-//     if (!res.headersSent) {
-//       return res.status(500).json({
-//         status: false,
-//         message: "Failed to upload file",
-//       });
-//     }
-//   }
-// };
-
-// download file
-
 exports.downloadFile = async (req, res) => {
   try {
     const { sheetId } = req.params;
