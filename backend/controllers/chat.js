@@ -219,8 +219,6 @@ exports.chat = async (req, res) => {
         .json({ status: false, message: "File's CSV data not found" });
     }
 
-    // pull recent history for context, oldest first — also tells generateQuery
-    // whether this is the very first message (empty array) and lets it match tone.
     const recentHistory = await ChatHistory.find({
       userId: req.id,
       sheetId: sheet._id,
@@ -262,7 +260,6 @@ exports.chat = async (req, res) => {
     let engineResult = null;
 
     if (query.type === "conversation") {
-      // No data was touched — Gemini decided this wasn't a real data question.
       reply = query.reply;
     } else {
       const executeResponse = await fetch(
@@ -279,7 +276,6 @@ exports.chat = async (req, res) => {
         },
       );
       engineResult = await executeResponse.json();
-      //console.log("from chat.js, engineResult:\n", engineResult);
 
       if (engineResult.status === "error") {
         return res.status(400).json({
@@ -288,12 +284,6 @@ exports.chat = async (req, res) => {
         });
       }
 
-      // If it's a compound (multi-fact) answer, translate the raw step-id
-      // keys into the real labels Gemini supplied — e.g. { s2: {...}, s3: {...} }
-      // becomes { "sales rep name": ..., "their total revenue": ... }. Without
-      // this, humanizeResult only sees opaque ids and either leaks them
-      // verbatim or has to guess a label, which has produced wrong labels
-      // before (e.g. calling a ratings count "views").
       let dataForHumanize = engineResult.data;
       if (engineResult.kind === "multiple" && query.final_labels) {
         dataForHumanize = {};
