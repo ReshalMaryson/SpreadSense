@@ -221,10 +221,6 @@ function validateQueryShape(parsed, columns) {
       throw new Error(`final_step '${fid}' was never produced`);
     }
   }
-
-  // Enforcement, not just prompt wording — a compound answer without labels
-  // is exactly what caused raw step ids ("S3 has 5 and S4 has 3.") to leak
-  // straight into a user-facing reply.
   if (Array.isArray(parsed.final_step)) {
     if (!parsed.final_labels || typeof parsed.final_labels !== "object") {
       throw new Error(
@@ -258,12 +254,6 @@ function validateResponse(parsed, columns) {
   throw new Error(`Unknown response type: ${parsed.type}`);
 }
 
-/**
- * history: [{ role: "user"|"model", text: string }, ...] — same shape the
- * controller already builds from ChatHistory, most recent last. Passed as
- * real multi-turn contents so Gemini can judge tone and detect a first
- * message (empty history) rather than guessing from the current message alone.
- */
 async function generateQuery(userMessage, columns, history = []) {
   const schemaBlock = `Columns available: ${JSON.stringify(columns)}`;
 
@@ -288,8 +278,6 @@ async function generateQuery(userMessage, columns, history = []) {
 
   const parsed = JSON.parse(response.text);
 
-  // Defense in depth — never trust generated output blindly before it
-  // reaches pandas (query type) or the user (conversation type).
   validateResponse(parsed, columns);
 
   return parsed;
