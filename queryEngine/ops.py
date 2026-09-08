@@ -40,10 +40,7 @@ def op_filter_isin(df, params):
 
 
 def op_filter_cmp(data, params):
-    # FIX: previously dataframe-only, which crashed on "which cities didn't
-    # reach 2 million in revenue?" — that needs filtering a groupby_agg
-    # SERIES by its own values (no "column" involved), a different, equally
-    # valid case from filtering original rows by a column's value.
+
     operator = params["operator"]
     if operator not in VALID_CMP_OPS:
         raise ValueError(f"operator '{operator}' not in {list(VALID_CMP_OPS)}")
