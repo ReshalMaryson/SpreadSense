@@ -15,3 +15,5 @@ backend/uploads/
 !backend/uploads/.gitkeep
 backend/testRead.js
 backend/testFile/
+backend/sysRules
+backend/sysRules/insightQueryService.txt
