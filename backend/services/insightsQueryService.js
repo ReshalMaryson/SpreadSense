@@ -133,7 +133,13 @@ function validateQueryChain(query, columns) {
 
 async function generateInsightQueries(columns, insightCount) {
   const prompt = `Columns available: ${JSON.stringify(columns)}`;
-  const systemInstruction = SYSTEM_INSTRUCTION.replace(
+
+  // const systemInstruction = SYSTEM_INSTRUCTION.replace(
+  //   "{{INSIGHT_COUNT}}",
+  //   insightCount,
+  // );
+  const rawPrompt = process.env.INSIGHTS_GENERATION_RULES.replace(/\\n/g, "\n");
+  const systemInstruction = rawPrompt.replace(
     "{{INSIGHT_COUNT}}",
     insightCount,
   );

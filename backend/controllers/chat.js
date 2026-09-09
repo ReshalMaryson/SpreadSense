@@ -5,6 +5,7 @@ const ChatHistory = require("../models/chatHistorySchema");
 
 const { generateQuery } = require("../services/geminiQueryService");
 const { humanizeResult } = require("../services/Humanizeservice ");
+const { safeFetchJson } = require("../utils/Safefetchjson");
 
 //delete a single chat message
 exports.deleteMessage = async (req, res) => {
@@ -231,7 +232,7 @@ exports.chat = async (req, res) => {
       { role: "model", text: entry.response },
     ]);
 
-    const columnsResponse = await fetch(
+    const columnsResult = await safeFetchJson(
       `${process.env.QUERY_ENGINE_URL}/columns`,
       {
         method: "POST",
@@ -242,12 +243,23 @@ exports.chat = async (req, res) => {
         }),
       },
     );
-    const { columns } = await columnsResponse.json();
+
+    if (!columnsResult.ok) {
+      console.error(
+        "Failed to fetch columns from query engine:",
+        columnsResult.error,
+      );
+      return res.status(502).json({
+        status: false,
+        message: "Could not read your data right now. Please try again.",
+      });
+    }
+
+    const { columns } = columnsResult.data;
 
     let query;
     try {
       query = await generateQuery(message, columns, formattedHistory);
-      console.log(query);
     } catch (queryError) {
       console.error("Gemini query generation failed:", queryError);
       return res.status(502).json({
@@ -262,7 +274,7 @@ exports.chat = async (req, res) => {
     if (query.type === "conversation") {
       reply = query.reply;
     } else {
-      const executeResponse = await fetch(
+      const executeResult = await safeFetchJson(
         `${process.env.QUERY_ENGINE_URL}/execute`,
         {
           method: "POST",
@@ -275,7 +287,20 @@ exports.chat = async (req, res) => {
           }),
         },
       );
-      engineResult = await executeResponse.json();
+
+      if (!executeResult.ok) {
+        console.error(
+          "Failed to execute query against query engine:",
+          executeResult.error,
+        );
+        return res.status(502).json({
+          status: false,
+          message:
+            "Something went wrong running that against your data. Please try again.",
+        });
+      }
+
+      engineResult = executeResult.data;
 
       if (engineResult.status === "error") {
         return res.status(400).json({

@@ -9,6 +9,14 @@ class OpError(Exception):
 
 
 VALID_AGGS = {"sum", "mean", "count", "min", "max", "median", "nunique"}
+# These aggregations are only meaningful on numeric data. Running them on a
+# text column doesn't error in pandas — sum() silently concatenates strings
+# instead of adding numbers, which produced a real bug: a "sum of reviews"
+# insight on a comma-formatted text column ("117,791") glued every value
+# together into one giant string, rendered as an unreadable, endlessly wide
+# insight card. Guard against this explicitly rather than trusting Gemini to
+# always know which columns are genuinely numeric.
+NUMERIC_ONLY_AGGS = {"sum", "mean", "median"}
 VALID_CMP_OPS = {
     "gt": lambda s, v: s > v,
     "gte": lambda s, v: s >= v,
@@ -17,18 +25,31 @@ VALID_CMP_OPS = {
 }
 
 
+def _require_numeric(series, agg, column_name):
+    if agg in NUMERIC_ONLY_AGGS and not pd.api.types.is_numeric_dtype(series):
+        raise ValueError(
+            f"column '{column_name}' is not numeric (dtype: {series.dtype}) — "
+            f"cannot compute '{agg}' on it. This column may contain text, "
+            f"formatted numbers (e.g. with commas), or mixed values."
+        )
+
+
 def op_groupby_agg(df, params):
     agg = params["agg"]
     if agg not in VALID_AGGS:
         raise ValueError(f"agg '{agg}' not in {VALID_AGGS}")
-    return df.groupby(params["group_by"])[params["metric"]].agg(agg)
+    metric = params["metric"]
+    _require_numeric(df[metric], agg, metric)
+    return df.groupby(params["group_by"])[metric].agg(agg)
 
 
 def op_aggregate(df, params):
     agg = params["agg"]
     if agg not in VALID_AGGS:
         raise ValueError(f"agg '{agg}' not in {VALID_AGGS}")
-    return df[params["column"]].agg(agg)
+    column = params["column"]
+    _require_numeric(df[column], agg, column)
+    return df[column].agg(agg)
 
 
 def op_filter_eq(df, params):
@@ -40,7 +61,6 @@ def op_filter_isin(df, params):
 
 
 def op_filter_cmp(data, params):
-
     operator = params["operator"]
     if operator not in VALID_CMP_OPS:
         raise ValueError(f"operator '{operator}' not in {list(VALID_CMP_OPS)}")
@@ -127,7 +147,6 @@ DATAFRAME_INPUT_OPS = {
     "value_counts", "count_rows",
 }
 SERIES_INPUT_OPS = {"idxmax", "idxmin", "max_value", "min_value"}
-# these accept either shape
 EITHER_INPUT_OPS = {"sort_values", "top_n", "get_value", "filter_cmp"}
 
 COLUMN_PARAM_KEYS = {"column"}
@@ -165,23 +184,32 @@ def validate_columns(step_id, params, valid_columns):
 
 
 def _to_native(value):
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, pd.Timestamp):
+        return value.isoformat()
+    if isinstance(value, pd.Timedelta):
+        return str(value)
     if isinstance(value, (np.integer,)):
         return int(value)
     if isinstance(value, (np.floating,)):
         return float(value)
     if isinstance(value, (np.bool_,)):
         return bool(value)
-    try:
-        if pd.isna(value):
-            return None
-    except (TypeError, ValueError):
-        pass
     return value
 
 
 def serialize(obj):
     if isinstance(obj, pd.DataFrame):
-        return {"kind": "dataframe", "data": obj.reset_index().to_dict(orient="records")}
+        records = obj.reset_index().to_dict(orient="records")
+        clean_records = [
+            {key: _to_native(value) for key, value in record.items()}
+            for record in records
+        ]
+        return {"kind": "dataframe", "data": clean_records}
     if isinstance(obj, pd.Series):
         return {"kind": "series", "data": [{"key": _to_native(k), "value": _to_native(v)} for k, v in obj.items()]}
     return {"kind": "scalar", "data": _to_native(obj)}
