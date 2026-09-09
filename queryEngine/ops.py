@@ -9,13 +9,6 @@ class OpError(Exception):
 
 
 VALID_AGGS = {"sum", "mean", "count", "min", "max", "median", "nunique"}
-# These aggregations are only meaningful on numeric data. Running them on a
-# text column doesn't error in pandas — sum() silently concatenates strings
-# instead of adding numbers, which produced a real bug: a "sum of reviews"
-# insight on a comma-formatted text column ("117,791") glued every value
-# together into one giant string, rendered as an unreadable, endlessly wide
-# insight card. Guard against this explicitly rather than trusting Gemini to
-# always know which columns are genuinely numeric.
 NUMERIC_ONLY_AGGS = {"sum", "mean", "median"}
 VALID_CMP_OPS = {
     "gt": lambda s, v: s > v,
