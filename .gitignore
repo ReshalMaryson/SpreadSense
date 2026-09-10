@@ -13,7 +13,11 @@ frontend/.env
 # backend related folder and files 
 backend/uploads/
 !backend/uploads/.gitkeep
-backend/testRead.js
-backend/testFile/
+
+#sys rules
 backend/sysRules
 backend/sysRules/insightQueryService.txt
+backend/sysRules/humanizeEngineResponse.txt
+backend/sysRules/humanizeInsights.txt
+backend/sysRules/queryGenerationrules.txt
+

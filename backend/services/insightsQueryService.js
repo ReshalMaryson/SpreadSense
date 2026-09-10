@@ -76,8 +76,10 @@ function validateQueryChain(query, columns) {
 
 async function generateInsightQueries(columns, insightCount) {
   const prompt = `Columns available: ${JSON.stringify(columns)}`;
-  const rawPrompt = process.env.INSIGHTS_GENERATION_RULES.replace(/\\n/g, "\n");
-  const systemInstruction = rawPrompt.replace(
+  const SYSTEM_INSTRUCTION =
+    process.env.INSIGHTS_QUERY_GENERATION_RULES.replace(/\\n/g, "\n");
+
+  const systemInstruction = SYSTEM_INSTRUCTION.replace(
     "{{INSIGHT_COUNT}}",
     insightCount,
   );
