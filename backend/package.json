@@ -2,12 +2,12 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js", 
-"scripts": {
-  "test": "echo \"Error: no test specified\" && exit 1",
-  "dev": "nodemon server.js",
-  "start": "node server.js"
-},
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
   "dependencies": {
     "@google/genai": "^2.16.0",
     "bcryptjs": "^3.0.3",
@@ -21,6 +21,7 @@
     "mongodb": "^7.5.0",
     "mongoose": "^9.9.1",
     "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
     "nodemon": "^3.1.14",
     "read-excel-file": "^9.3.5",
     "socket.io": "^4.8.3"

@@ -5,6 +5,9 @@ const jwt = require("jsonwebtoken");
 const Users = require("../models/userSchema");
 const refreshTokenSchema = require("../models/refreshTokenSchema");
 
+// helper method
+const { purgeOldSheets } = require("../cornjob/deleteOldFiles");
+
 exports.Login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -13,7 +16,6 @@ exports.Login = async (req, res) => {
       return res.status(400).json({ message: "missing required fields" });
     }
 
-    //fetch user by email
     const user = await Users.findOne({ email: email }).select("+password");
     if (!user) {
       return res.status(404).json({
@@ -21,24 +23,21 @@ exports.Login = async (req, res) => {
       });
     }
 
-    // check the password
     const verified = await bcrypt.compare(password, user.password);
     if (!verified) {
       return res.status(400).json({ message: "invalid email or password" });
     }
 
-    // creating JWT for current user logged in.
     const accessToken = jwt.sign(
       {
         id: user._id,
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "1m", // initial jwt expriy time for testing purpose.
+        expiresIn: "1m",
       },
     );
 
-    // Refresh Token for the current user.
     const refreshToken = jwt.sign(
       { id: user._id },
       process.env.JWT_REFRESH_SECRET,
@@ -47,7 +46,6 @@ exports.Login = async (req, res) => {
       },
     );
 
-    // save refresh token in the DB
     if (refreshToken) {
       refreshTokenSchema.create({
         user: user._id,
@@ -55,20 +53,26 @@ exports.Login = async (req, res) => {
       });
     }
 
-    // save access token in cookie
     res.cookie("token", accessToken, {
       httpOnly: true,
-      secure:false, 
+      secure: false,
       sameSite: "strict",
-   maxAge: 1 * 60 * 1000
+      maxAge: 1 * 60 * 1000,
     });
 
-    // save refresh token in cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure:false, 
+      secure: false,
       sameSite: "strict",
-      maxAge: 1 * 24 * 60 * 60 * 1000, 
+      maxAge: 1 * 24 * 60 * 60 * 1000,
+    });
+
+    // delete files older than 20 days for the logged-in user
+    await purgeOldSheets({ userId: user._id }).catch((err) => {
+      console.error(
+        `[purge] Login-triggered purge failed for user ${user._id}:`,
+        err.message,
+      );
     });
 
     // payload for the response
@@ -78,7 +82,6 @@ exports.Login = async (req, res) => {
       email: user.email,
     };
 
-    // success response
     return res.status(200).json({ message: "login successful", data: resUser });
   } catch (err) {
     return res.status(500).json({ message: "server error " + err.message });
@@ -129,19 +132,18 @@ exports.refreshToken = async (req, res) => {
       res.clearCookie("refreshToken");
 
       return res.status(403).json({
-        message: "Refresh token reuse detected. All sessions revoked, please login again.",
+        message:
+          "Refresh token reuse detected. All sessions revoked, please login again.",
       });
     }
 
     await refreshTokenSchema.deleteOne({ _id: tokenExist._id });
-
 
     const newAccessToken = jwt.sign(
       { id: tokenVerify.id },
       process.env.JWT_SECRET,
       { expiresIn: "1m" },
     );
-
 
     const newRefreshToken = jwt.sign(
       { id: tokenVerify.id },
@@ -154,12 +156,11 @@ exports.refreshToken = async (req, res) => {
       token: newRefreshToken,
     });
 
-
     res.cookie("token", newAccessToken, {
       httpOnly: true,
       secure: false,
       sameSite: "strict",
-       maxAge: 1 * 60 * 1000
+      maxAge: 1 * 60 * 1000,
     });
 
     res.cookie("refreshToken", newRefreshToken, {
@@ -190,7 +191,7 @@ exports.GoogleLogin = async (req, res) => {
 
     // verify token with Google
     const googleRes = await fetch(
-      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`
+      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`,
     );
 
     if (!googleRes.ok) {
@@ -198,7 +199,6 @@ exports.GoogleLogin = async (req, res) => {
     }
 
     const payload = await googleRes.json();
-  
 
     // find or create user
     let user = await Users.findOne({ email: payload.email });
@@ -218,7 +218,7 @@ exports.GoogleLogin = async (req, res) => {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "1m", 
+        expiresIn: "1m",
       },
     );
 
@@ -242,15 +242,15 @@ exports.GoogleLogin = async (req, res) => {
     // save access token in cookie
     res.cookie("token", jwtAccessToken, {
       httpOnly: true,
-      secure:true, 
-      sameSite: "none", 
+      secure: true,
+      sameSite: "none",
       maxAge: 3 * 60 * 1000,
     });
 
     // save refresh token in cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure:true, 
+      secure: true,
       sameSite: "none",
       maxAge: 1 * 24 * 60 * 60 * 1000,
     });

@@ -5,6 +5,8 @@ require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
+// corn job
+const { schedulePurgeJob } = require("./cornjob/deleteOldFiles");
 // DB
 const ConnectDB = require("./db/db");
 
@@ -34,6 +36,9 @@ server.use("/auth", authRoutes);
 server.use("/users", userRoutes);
 server.use("/files", fileRoutes);
 server.use("/chat", chatRoutes);
+
+// delete files older than 20 days for all users on server start
+schedulePurgeJob();
 
 //server start
 const PORT = process.env.PORT || 5000;

@@ -24,21 +24,21 @@ const sheetsSchema = new mongoose.Schema(
       required: true,
     },
     insights: {
-    type: [
+      type: [
         {
-            title: { type: String, required: true },
-            finding: { type: String, required: true },
-        }
-    ],
-    default: [],
+          title: { type: String, required: true },
+          finding: { type: String, required: true },
+        },
+      ],
+      default: [],
     },
     insightsStatus: {
       type: String,
       enum: ["processing", "ready", "failed"],
       default: "processing",
-    }, 
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Sheet", sheetsSchema);
