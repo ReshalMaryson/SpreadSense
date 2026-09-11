@@ -34,7 +34,15 @@ exports.getAllUsers = async (req, res) => {
 //create a user
 exports.createUser = async (req, res) => {
   try {
-    const password = req.body.password;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        status: "failure",
+        message:
+          "Password is required and should be at least 6 characters long",
+      });
+    }
 
     const hashedPass = await bcyrpt.hash(password, 10);
 
@@ -136,10 +144,16 @@ exports.updateUser = async (req, res) => {
       return res.status(400).json({ message: "invalid Id" });
     }
 
+    const { name, email } = req.body;
+    if (!name || !email) {
+      return res
+        .status(400)
+        .json({ status: "failure", message: "name and email are required" });
+    }
     const payload = {
-      name: req.body.name,
-      email: req.body.email,
+      name: name,
     };
+
     // update in the DB
     const userupdated = await User.findByIdAndUpdate(Id, payload, {
       new: true,

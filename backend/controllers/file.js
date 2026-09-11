@@ -14,6 +14,7 @@ const ChatHistory = require("../models/chatHistorySchema");
 exports.getUserFiles = async (req, res) => {
   try {
     const userFiles = await Sheet.find({ userId: req.id });
+
     if (userFiles.length === 0) {
       return res.status(200).json({
         status: true,
@@ -80,8 +81,15 @@ exports.searchFilesByName = async (req, res) => {
 // delete a file and its related chunks from GridFS and the database.
 exports.deleteFile = async (req, res) => {
   try {
+    const { id } = req.params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid file ID" });
+    }
     const sheet = await Sheet.findOne({
-      _id: req.params.id,
+      _id: id,
       userId: req.id,
     });
 
@@ -94,7 +102,7 @@ exports.deleteFile = async (req, res) => {
     // this thing deletes both the files doc and all associated chunks in one call
     await bucket.delete(new mongoose.Types.ObjectId(sheet.gridFsId));
 
-    await Sheet.deleteOne({ _id: sheet._id });
+    await Sheet.deleteOne({ _id: sheet._id, userId: req.id });
 
     return res
       .status(200)
@@ -110,12 +118,17 @@ exports.deleteFile = async (req, res) => {
 // hard delete file and its contents
 exports.deleteFileAndContent = async (req, res) => {
   const session = await mongoose.startSession();
+  const { id } = req.params;
+
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ status: false, message: "Invalid file ID" });
+  }
 
   try {
     session.startTransaction();
 
     const sheet = await Sheet.findOne({
-      _id: req.params.id,
+      _id: id,
       userId: req.id,
     }).session(session);
 
@@ -137,7 +150,7 @@ exports.deleteFileAndContent = async (req, res) => {
       userId: req.id,
     }).session(session);
 
-    await Sheet.deleteOne({ _id: sheet._id }).session(session);
+    await Sheet.deleteOne({ _id: sheet._id, userId: req.id }).session(session);
 
     await session.commitTransaction();
 
@@ -156,155 +169,7 @@ exports.deleteFileAndContent = async (req, res) => {
   }
 };
 
-// upload file and generate insights.
-// exports.uploadFile = async (req, res) => {
-//   let uploadStream = null;
-
-//   try {
-//     if (!req.file) {
-//       return res.status(400).json({
-//         status: false,
-//         message: "No file uploaded",
-//       });
-//     }
-
-//     const MAX_SIZE = 2 * 1024 * 1024;
-
-//     if (req.file.size > MAX_SIZE) {
-//       return res.status(400).json({
-//         status: false,
-//         message: "File size cannot exceed 2 MB",
-//       });
-//     }
-
-//     // NOTE for CSV : this method formats the CSV putting first row as the sheet name and from 2nd row the headers of the sheet starts and rest of the data is below it. this is being handled by the query engine for now, it skips the first row , but when changing is done in workbookToCsv function, the query engine should be updated accordingly to handle the new format.
-//     const csv = workbookToCsv(req.parsedSheet);
-
-//     const geminiStart = performance.now();
-//     let geminiResult;
-
-//     try {
-//       geminiResult = await generateInsights(csv, req.totalRows);
-//     } catch (firstError) {
-//       console.error("First Gemini attempt failed. Retrying...");
-
-//       try {
-//         geminiResult = await generateInsights(csv, req.totalRows);
-//       } catch (retryError) {
-//         console.error("Gemini failed after retry:");
-//         console.error(retryError);
-
-//         return res.status(502).json({
-//           status: false,
-//           message: "Failed to analyze the file. Please try again.",
-//         });
-//       }
-//     }
-//     const elapsed = ((performance.now() - geminiStart) / 1000).toFixed(2);
-//     console.log(`Gemini: ${elapsed}s`);
-
-//     const insights = geminiResult.result.insights;
-//     const session = await mongoose.startSession();
-
-//     let file;
-
-//     try {
-//       session.startTransaction();
-
-//       const bucket = getBucket();
-
-//       uploadStream = bucket.openUploadStream(req.file.originalname, {
-//         contentType: req.file.mimetype,
-//       });
-
-//       await new Promise((resolve, reject) => {
-//         uploadStream.on("finish", resolve);
-//         uploadStream.on("error", reject);
-
-//         Readable.from(req.file.buffer).pipe(uploadStream);
-//       });
-
-//       file = await Sheet.create(
-//         [
-//           {
-//             userId: req.id,
-//             originalName: req.file.originalname,
-//             gridFsId: uploadStream.id,
-//             mimeType: req.file.mimetype,
-//             fileSize: req.file.size,
-//             insights,
-//             insightsStatus: "rea  dy",
-//           },
-//         ],
-//         { session },
-//       );
-
-//       file = file[0];
-
-//       await CSV.create(
-//         [
-//           {
-//             sheetId: file._id,
-//             csvData: csv,
-//           },
-//         ],
-//         { session },
-//       );
-
-//       await session.commitTransaction();
-//     } catch (storageError) {
-//       await session.abortTransaction();
-
-//       console.error("File storage failed:");
-//       console.error(storageError);
-
-//       if (uploadStream?.id) {
-//         try {
-//           const bucket = getBucket();
-//           await bucket.delete(uploadStream.id);
-//         } catch (deleteError) {
-//           console.error("Failed to cleanup GridFS file:", deleteError);
-//         }
-//       }
-
-//       return res.status(500).json({
-//         status: false,
-//         message: "Failed to upload file",
-//       });
-//     } finally {
-//       await session.endSession();
-//     }
-
-//     // Warm the Python cache so the first chat message is fast. Non-blocking
-//     // and never fails the upload — worst case, /execute lazy-loads it later.
-//     const QUERY_ENGINE_URL =
-//       process.env.QUERY_ENGINE_URL || "http://localhost:8000";
-//     fetch(`${QUERY_ENGINE_URL}/load`, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ sheetId: file._id.toString(), csv }),
-//     }).catch((err) => {
-//       console.error("Failed to warm Python cache:", err.message);
-//     });
-
-//     return res.status(201).json({
-//       status: true,
-//       message: "File uploaded successfully",
-//       file,
-//     });
-//   } catch (error) {
-//     console.error(error);
-
-//     if (!res.headersSent) {
-//       return res.status(500).json({
-//         status: false,
-//         message: "Failed to upload file",
-//       });
-//     }
-//   }
-// };
-
-// upload file and generate insights (synchronous — now engine-backed, no codeExecution).
+// upload file and generate insights
 exports.uploadFile = async (req, res) => {
   let uploadStream = null;
 
@@ -327,7 +192,7 @@ exports.uploadFile = async (req, res) => {
 
     // NOTE for CSV: this method formats the CSV putting first row as the sheet name and from
     // 2nd row the headers of the sheet start. The query engine skips the first row to handle
-    // this — if this changes, update the query engine's parse_csv accordingly.
+    // this , if this changes, update the query engine's parse_csv accordingly.
     const csv = workbookToCsv(req.parsedSheet);
 
     const sheetId = new mongoose.Types.ObjectId();
@@ -454,9 +319,17 @@ exports.uploadFile = async (req, res) => {
     }
   }
 };
+
+// download logged in user's file
 exports.downloadFile = async (req, res) => {
   try {
     const { sheetId } = req.params;
+
+    if (!sheetId || !mongoose.Types.ObjectId.isValid(sheetId)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid sheet Id" });
+    }
 
     const file = await Sheet.findOne({
       _id: sheetId,

@@ -7,24 +7,19 @@ const { generateQuery } = require("../services/geminiQueryService");
 const { humanizeResult } = require("../services/Humanizeservice ");
 const { safeFetchJson } = require("../utils/Safefetchjson");
 
-//delete a single chat message
+// delete a single chat
 exports.deleteMessage = async (req, res) => {
   try {
     const { chatId } = req.params;
 
-    const chat = await ChatHistory.findById(chatId);
+    const chat = await ChatHistory.findOneAndDelete({
+      _id: chatId,
+      userId: req.id,
+    });
 
     if (!chat) {
       return res.status(404).json({ status: false, message: "Chat not found" });
     }
-
-    if (chat.userId.toString() !== req.id) {
-      return res
-        .status(403)
-        .json({ status: false, message: "Unauthorized to delete this chat" });
-    }
-
-    await ChatHistory.findByIdAndDelete(chatId);
 
     return res
       .status(200)
@@ -46,6 +41,7 @@ exports.deleteConversation = async (req, res) => {
       sheetId,
       userId: req.id,
     });
+
     if (!result.deletedCount) {
       return res
         .status(404)
@@ -124,6 +120,13 @@ exports.getMessages = async (req, res) => {
   try {
     const { sheetId } = req.params;
     const { before } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(sheetId)) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid sheetId",
+      });
+    }
 
     const sheet = await Sheet.findOne({
       _id: sheetId,
@@ -204,6 +207,11 @@ exports.chat = async (req, res) => {
       return res
         .status(400)
         .json({ status: false, message: "sheetId and message are required" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(sheetId)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid sheetId" });
     }
 
     const sheet = await Sheet.findOne({ _id: sheetId, userId: req.id });
