@@ -34,13 +34,27 @@ exports.getAllUsers = async (req, res) => {
 //create a user
 exports.createUser = async (req, res) => {
   try {
-    const { password } = req.body;
+    const { password, name, email } = req.body;
 
-    if (!password || password.length < 6) {
+    if (typeof password !== "string" || !password || password.length < 6) {
       return res.status(400).json({
         status: "failure",
         message:
           "Password is required and should be at least 6 characters long",
+      });
+    }
+
+    if (
+      typeof name !== "string" ||
+      typeof email !== "string" ||
+      !name ||
+      name.trim() === "" ||
+      !email ||
+      email.trim() === ""
+    ) {
+      return res.json({
+        status: "failure",
+        message: "Name and Email are required",
       });
     }
 

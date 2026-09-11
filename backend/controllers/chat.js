@@ -37,6 +37,12 @@ exports.deleteConversation = async (req, res) => {
   try {
     const { sheetId } = req.params;
 
+    if (!sheetId || !mongoose.Types.ObjectId.isValid(sheetId)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid sheetId" });
+    }
+
     const result = await ChatHistory.deleteMany({
       sheetId,
       userId: req.id,
@@ -203,11 +209,17 @@ exports.chat = async (req, res) => {
   try {
     const { sheetId, message } = req.body;
 
-    if (!sheetId || !message) {
+    if (
+      typeof message !== "string" ||
+      !sheetId ||
+      !message ||
+      message.trim() === ""
+    ) {
       return res
         .status(400)
         .json({ status: false, message: "sheetId and message are required" });
     }
+
     if (!mongoose.Types.ObjectId.isValid(sheetId)) {
       return res
         .status(400)

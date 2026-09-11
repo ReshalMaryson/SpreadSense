@@ -50,7 +50,7 @@ exports.searchFilesByName = async (req, res) => {
   try {
     const { name } = req.params;
 
-    if (!name || !name.trim()) {
+    if (typeof name !== "string" || !name || !name.trim()) {
       return res.status(200).json({
         status: true,
         message: "No search term provided",
@@ -88,6 +88,7 @@ exports.deleteFile = async (req, res) => {
         .status(400)
         .json({ status: false, message: "Invalid file ID" });
     }
+
     const sheet = await Sheet.findOne({
       _id: id,
       userId: req.id,
