@@ -9,6 +9,8 @@
 
   position: relative;
   width: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -29,7 +31,6 @@
   color: var(--ink);
   font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
 }
 
 .landing *,
@@ -76,22 +77,26 @@
   z-index: 2;
 
   flex: 1;
+  min-height: 0;
   width: 100%;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  padding: 40px 6vw;
+  padding: 1.5vh 6vw;
+  overflow: hidden;
 }
 
 .hero {
   width: 100%;
   max-width: 1100px;
+  max-height: 100%;
 
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 
   text-align: center;
 }
@@ -105,13 +110,11 @@
 .headline {
   width: 100%;
   max-width: 1000px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
-
   font-family: "Fraunces", serif;
-  font-size: clamp(3rem, 5vw, 5rem);
+  font-size: 4rem;
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.025em;
@@ -145,7 +148,7 @@
 }
 
 .cta-wrap {
-  margin-top: 46px;
+  margin-top: clamp(12px, 2.5vh, 32px);
 
   display: flex;
   flex-direction: column;
@@ -159,7 +162,7 @@
 
   gap: 10px;
 
-  padding: 17px 32px;
+  padding: clamp(12px, 1.8vh, 17px) 32px;
 
   background: var(--ink);
   color: var(--paper);
@@ -195,14 +198,14 @@
 }
 
 .landing footer {
-  margin-top: 10px;
+  flex-shrink: 0;
   position: relative;
   z-index: 2;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 5vw 28px;
+  padding: clamp(10px, 2vh, 24px) 5vw clamp(12px, 2.2vh, 28px);
   font-size: 0.8rem;
   color: var(--ink-soft);
 }
@@ -221,40 +224,37 @@
   }
 
   .headline {
-    font-size: clamp(2.5rem, 7vw, 4rem);
+    font-size: clamp(2rem, 6vw, 3.5rem);
   }
 }
 
 @media (max-width: 600px) {
-  .landing nav {
-    padding: 22px 6vw;
-  }
-
   .landing main {
-    padding: 40px 6vw;
+    padding: 1.5vh 6vw;
   }
-
   .headline {
-    font-size: clamp(2.25rem, 10vw, 3.5rem);
-    line-height: 1.08;
+    font-size: clamp(1.6rem, 8vw, 2.8rem);
+    line-height: 1.1;
   }
 
   .headline-line {
     white-space: normal;
+    font-size: 2rem;
   }
 
   .cta-wrap {
-    margin-top: 38px;
+    margin-top: clamp(12px, 2.5vh, 24px);
   }
 
   .cta-btn {
-    padding: 15px 26px;
+    padding: clamp(10px, 1.8vh, 15px) 26px;
   }
 
   .landing footer {
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     text-align: center;
+    padding: clamp(8px, 1.5vh, 14px) 5vw;
   }
 }
 

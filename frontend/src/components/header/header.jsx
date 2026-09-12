@@ -1,12 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
 import "../../css/header/header.css";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "../../context/authContext";
 import { logoutAttempt } from "../auth/controllers/authControllers";
 
 export default function Header() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <nav>
       <div className="logo">
@@ -24,17 +27,20 @@ export default function Header() {
         </Link>
       </div>
 
+      {/* Desktop navigation */}
       <div className="nav-right">
         <div className="nav-links">
           <Link to="/how" style={{ textDecoration: "none" }}>
             How it works
           </Link>
         </div>
+
         {user ? (
           <>
             <Link to="/profile" className="profile-link">
               Profile
-            </Link>{" "}
+            </Link>
+
             <button
               className="login-btn"
               style={{
@@ -46,7 +52,7 @@ export default function Header() {
               onClick={() => logoutAttempt(navigate, logout)}
             >
               Logout
-            </button>{" "}
+            </button>
           </>
         ) : (
           <Link
@@ -61,6 +67,79 @@ export default function Header() {
             Log in
           </Link>
         )}
+      </div>
+
+      {/* Mobile hamburger */}
+      <button className="hamburger-btn" onClick={() => setMenuOpen(true)}>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
+      {/* Mobile sidebar */}
+      <div className={`sidebar ${menuOpen ? "open" : ""}`}>
+        {/* Close button */}
+        <button
+          className="sidebar-close-btn"
+          onClick={() => setMenuOpen(false)}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <line x1="6" y1="6" x2="18" y2="18" />
+            <line x1="18" y1="6" x2="6" y2="18" />
+          </svg>
+        </button>
+
+        {/* Sidebar links */}
+        <div className="sidebar-links">
+          <Link
+            to="/how"
+            onClick={() => setMenuOpen(false)}
+            className="sidebar-link-mobile"
+            style={{ fontSize: "1.5rem" }}
+          >
+            How it works
+          </Link>
+
+          {user ? (
+            <>
+              <Link
+                to="/profile"
+                className="profile-link-mobile"
+                style={{ fontSize: "1.5rem" }}
+              >
+                Profile
+              </Link>
+
+              <button
+                className="sidebar-logout-btn"
+                onClick={() => {
+                  setMenuOpen(false);
+                  logoutAttempt(navigate, logout);
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/login" onClick={() => setMenuOpen(false)}>
+              Log in
+            </Link>
+          )}
+        </div>
       </div>
     </nav>
   );

@@ -1,10 +1,10 @@
 .conversation-page {
   --paper: #f6f1e4;
   --paper-card: #fbf8ef;
-  --ink: #11261b;
+  --ink: rgb(17, 38, 27);
   --ink-soft: rgba(17, 38, 27, 0.6);
   --line: rgba(17, 38, 27, 0.12);
-  --cell: #1f8a4c;
+  --cell: hwb(145 12% 46%);
   --cell-deep: #12532d;
   --cell-bright: #2faf63;
 
@@ -205,21 +205,21 @@
 }
 
 /* ---------- MOBILE SIDEBAR TOGGLE ---------- */
-/* Hidden on desktop entirely — only rendered/relevant below the mobile breakpoint */
 .conversation-page .sidebar-toggle {
   display: none;
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 60;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--ink);
+  position: absolute;
+  bottom: 90px;
+  left: 7px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50px;
+  background: #11261bef;
   color: var(--paper);
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 24px -8px rgba(17, 38, 27, 0.4);
+  box-shadow: -4px 2px 67px 17px rgba(17, 38, 27, 0.54);
+  -webkit-box-shadow: -4px 2px 67px 17px rgba(17, 38, 27, 0.54);
+  -moz-box-shadow: -4px 2px 67px 17px rgba(17, 38, 27, 0.54);
 }
 
 .conversation-page .sidebar-toggle svg {
@@ -382,8 +382,8 @@
 @media (max-width: 700px) {
   .conversation-page .sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 90px;
+    left: -25px;
     height: 100dvh;
     width: min(82vw, 300px);
     max-width: 300px;

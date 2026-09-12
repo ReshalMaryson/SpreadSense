@@ -45,7 +45,7 @@ export default function LandingPage() {
   const headline = HEADLINES[current];
 
   return (
-    <div className="landing" style={{ height: "100px", minHeight: "100vh" }}>
+    <div className="landing">
       <div className="grid-texture" />
 
       <main>
@@ -77,9 +77,6 @@ export default function LandingPage() {
               Upload your file
             </Link>
             <input type="file" hidden className="landing-page-file-input" />
-            <div className="cta-note">
-              No sign-up needed to see what it finds.
-            </div>
           </div>
         </section>
       </main>

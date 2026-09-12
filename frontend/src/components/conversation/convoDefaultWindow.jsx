@@ -174,24 +174,6 @@ function Conversation() {
 
   return (
     <div className="conversation-page">
-      <button
-        className="sidebar-toggle"
-        onClick={() => setSidebarOpen(true)}
-        title="Show conversations"
-        aria-label="Show conversations"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M3 6h18M3 12h18M3 18h18" />
-        </svg>
-      </button>
-
       <div
         className={`sidebar-backdrop ${sidebarOpen ? "show" : ""}`}
         onClick={() => setSidebarOpen(false)}
@@ -385,6 +367,24 @@ function Conversation() {
           />
         )}
       </main>
+      <button
+        className="sidebar-toggle"
+        onClick={() => setSidebarOpen(true)}
+        title="Show conversations"
+        aria-label="Show conversations"
+        style={sidebarOpen ? { display: "none" } : null}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 6h18M3 12h18M3 18h18" />
+        </svg>
+      </button>
     </div>
   );
 }

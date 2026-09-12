@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import "../../../css/conversation/messageWindow.css";
 
 function MessageWindow({
@@ -8,6 +8,8 @@ function MessageWindow({
   onBackToInsights,
 }) {
   const [draft, setDraft] = useState("");
+  const chatBodyRef = useRef(null);
+  const bottomRef = useRef(null);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -16,7 +18,7 @@ function MessageWindow({
     }
   };
 
-  // format time`
+  // format time
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString([], {
       hour: "numeric",
@@ -33,6 +35,11 @@ function MessageWindow({
       .replace(/^#+\s*/gm, "")
       .replace(/`/g, "");
   };
+
+  // scroll to bottom whenever messages change (new message or initial load)
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [messages]);
 
   return (
     <div className="convo-window">
@@ -58,7 +65,7 @@ function MessageWindow({
         </button>
       </div>
 
-      <div className="chat-body">
+      <div className="chat-body" ref={chatBodyRef}>
         {messages.map((m, i) => (
           <div className={`msg ${m.role}`} key={i}>
             {cleanMessage(m.text)}
@@ -67,6 +74,7 @@ function MessageWindow({
             </p>
           </div>
         ))}
+        <div ref={bottomRef} />
       </div>
 
       <div className="chat-input-wrap">

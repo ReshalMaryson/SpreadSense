@@ -20,9 +20,9 @@ export const getUserAllFiles = async (setUserFiles) => {
 // delete an uploaded file(single)
 export const deleteUploadedFile = async (fileid) => {
   try {
-    const res = await api.delete(`/files/${fileid}`);
-    if(!res.data){
-        return false;
+    const res = await api.delete(`files/hard/${fileid}`);
+    if (!res.data) {
+      return false;
     }
     return true;
   } catch (error) {
@@ -32,24 +32,24 @@ export const deleteUploadedFile = async (fileid) => {
 };
 
 // upload a file.
-export const uploadExcelFile=async(e)=>{
-   const file = e.target.files[0];
+export const uploadExcelFile = async (e) => {
+  const file = e.target.files[0];
   if (!file) return;
-  try{
+  try {
     const formData = new FormData();
     formData.append("excelFile", file);
 
     const response = await api.post("/files/upload", formData);
-      if(response.status != 201){ 
-        return false
-      }
-     return response.data.file;
-  }catch(error){
-     console.log(error);
-     alert(error); 
-     return false;
+    if (response.status != 201) {
+      return false;
     }
-}
+    return response.data.file;
+  } catch (error) {
+    console.log(error);
+    alert(error);
+    return false;
+  }
+};
 
 //download an uploaded file
 export const downloadFile = async (sheetId) => {
@@ -82,7 +82,7 @@ export const getFilesByName = async (name, setFiles) => {
     }
 
     const res = await api.get(
-      `/files/search/${encodeURIComponent(name.trim())}`
+      `/files/search/${encodeURIComponent(name.trim())}`,
     );
 
     if (res.status === 200) {
@@ -91,7 +91,6 @@ export const getFilesByName = async (name, setFiles) => {
     }
 
     return false;
-
   } catch (err) {
     console.log(err);
     return false;
