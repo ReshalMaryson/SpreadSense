@@ -8,22 +8,20 @@ export const loginAttempt = async (user, navigate, login, setErrorMessage) => {
   }
 
   try {
-    const res = await api.post("/auth/login", user); 
-    if(res.status == 200){
+    const res = await api.post("/auth/login", user);
+    if (res.status == 200) {
       login(res.data.data);
 
-        navigate("/", {
-          replace: true,
-          state: { reloadAfterLogin: true },
-        });
+      navigate("/", {
+        replace: true,
+        state: { reloadAfterLogin: true },
+      });
     }
     console.log(res.data);
-    
-  
-
   } catch (err) {
     console.log(err);
-    const msg = err.response?.data?.message || "Something went wrong. Please try again.";
+    const msg =
+      err.response?.data?.message || "Something went wrong. Please try again.";
     setErrorMessage(msg);
   }
 };
@@ -43,13 +41,11 @@ export const googleLoginAttempt = async (accessToken, navigate, login) => {
   }
 };
 
-
-
 // logout
 export const logoutAttempt = async (navigate, logout) => {
   try {
     await api.post("/auth/logout");
-    navigate("/");    
+    navigate("/");
     logout();
   } catch (err) {
     console.log(err.response?.data || err.message);
@@ -59,11 +55,7 @@ export const logoutAttempt = async (navigate, logout) => {
 //sign up
 //  - validate fields to create user
 const validate = (formData) => {
-  if (
-    !formData.name ||
-    !formData.email ||
-    !formData.password 
-  ) {
+  if (!formData.name || !formData.email || !formData.password) {
     return "Missing required fields.";
   }
 
@@ -105,7 +97,7 @@ export const signUp = async (
       setFormData({
         name: "",
         email: "",
-        password: ""
+        password: "",
       });
 
       // direct to login page

@@ -2,9 +2,13 @@ import "../../css/auth/login.css";
 import { useState, useContext, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
+import { useGoogleLogin } from "@react-oauth/google";
 
 // Controllers
-import { loginAttempt } from "./controllers/authControllers";
+import {
+  loginAttempt,
+  googleLoginAttempt,
+} from "./controllers/authControllers";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,10 +19,13 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  const userCredentials = {
-    email: email.trim(),
-    password: password.trim(),
-  };
+  // google login handler
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      await googleLoginAttempt(tokenResponse.access_token, navigate, login);
+    },
+    onError: () => console.log("Google login failed"),
+  });
 
   // handle login errors
   async function handlelogin() {
@@ -216,7 +223,7 @@ export default function Login() {
             <span></span>
           </div>
 
-          <button type="button" className="google-button">
+          <button type="button" className="google-button" onClick={googleLogin}>
             <span className="google-icon">G</span>
             <span>Continue with Google</span>
           </button>
