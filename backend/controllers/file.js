@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const getBucket = require("../config/gridFS");
 const { Readable } = require("stream");
 const { workbookToCsv } = require("../utils/exlTocsv");
-// const { generateInsights } = require("../services/geminiService");
 const { generateInsights } = require("../services/InsightsService");
 
 // schema
@@ -45,6 +44,10 @@ exports.getUserFiles = async (req, res) => {
   }
 };
 
+// helper fucntion for search files by name
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 // search files by name
 exports.searchFilesByName = async (req, res) => {
   try {
@@ -60,7 +63,7 @@ exports.searchFilesByName = async (req, res) => {
 
     const files = await Sheet.find({
       userId: req.id,
-      originalName: { $regex: name.trim(), $options: "i" },
+      originalName: { $regex: escapeRegex(name.trim()), $options: "i" },
     }).select("_id originalName fileSize insights");
 
     return res.status(200).json({
@@ -75,44 +78,6 @@ exports.searchFilesByName = async (req, res) => {
       status: false,
       message: "Server Error: Unable to search files",
     });
-  }
-};
-
-// delete a file and its related chunks from GridFS and the database.
-exports.deleteFile = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Invalid file ID" });
-    }
-
-    const sheet = await Sheet.findOne({
-      _id: id,
-      userId: req.id,
-    });
-
-    if (!sheet) {
-      return res.status(404).json({ status: false, message: "File not found" });
-    }
-
-    const bucket = getBucket();
-
-    // this thing deletes both the files doc and all associated chunks in one call
-    await bucket.delete(new mongoose.Types.ObjectId(sheet.gridFsId));
-
-    await Sheet.deleteOne({ _id: sheet._id, userId: req.id });
-
-    return res
-      .status(200)
-      .json({ status: true, message: "File deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ status: false, message: "Failed to delete file" });
   }
 };
 
