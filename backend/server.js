@@ -1,6 +1,6 @@
 const express = require("express");
 const server = express();
-app.set("trust proxy", 1);
+server.set("trust proxy", 1);
 
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
