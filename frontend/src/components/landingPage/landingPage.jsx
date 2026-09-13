@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import "../../css/landingPage/landingPage.css";
+import "../../css/landingPage/landingpage.css";
 
 const HEADLINES = [
   {
