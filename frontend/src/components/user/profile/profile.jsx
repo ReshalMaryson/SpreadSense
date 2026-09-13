@@ -23,14 +23,11 @@ export default function Profile() {
 
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
-  //error states
-  const [profileFeildsError, setProfileFeildsError] = useState("");
 
   // get logged in user and its states
   const [user, setUser] = useState(null);
   const [updateData, setUpdateData] = useState({
     name: "",
-    email: "",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -63,7 +60,7 @@ export default function Profile() {
   // update button
   async function handleSave(event, updateData) {
     event.preventDefault();
-    if (updateData.name.trim() === "" || updateData.email.trim() === "") {
+    if (updateData.name.trim() === "") {
       setMessage("Missing required fields.");
       setTimeout(() => setMessage(""), 2000);
       return;
@@ -92,12 +89,13 @@ export default function Profile() {
   };
 
   // delete an user account parmanently
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
       "Are you sure you want to delete your account? This cannot be undone.",
     );
 
     if (confirmed) {
+      await deleteAccount(logoutAttempt, navigate, logout);
       alert("Account deletion requested.");
     }
   };

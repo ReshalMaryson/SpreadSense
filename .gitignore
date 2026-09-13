@@ -6,6 +6,7 @@ node_modules/
 .env
 backend/.env
 frontend/.env
+queryEngine/.env
 
 # Logs
 *.log
@@ -16,8 +17,4 @@ backend/uploads/
 
 #sys rules
 backend/sysRules
-backend/sysRules/insightQueryService.txt
-backend/sysRules/humanizeEngineResponse.txt
-backend/sysRules/humanizeInsights.txt
-backend/sysRules/queryGenerationrules.txt
 

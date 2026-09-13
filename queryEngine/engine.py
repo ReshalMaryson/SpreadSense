@@ -1,16 +1,32 @@
 import io
+import os
 import time
 import threading
 import pandas as pd
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, Depends
 from pydantic import BaseModel
 from ops import run_steps, OpError
 
+from dotenv import load_dotenv;
+load_dotenv()
+
 app = FastAPI()
 
-CACHE = {}  # sheetId -> {"df": dataframe, "last_used": timestamp}
+CACHE = {}  
 TTL_SECONDS = 1800  # 30 minutes
+
+INTERNAL_SECRET = os.environ.get("QUERY_ENGINE_SECRET")
+if not INTERNAL_SECRET:
+    raise RuntimeError(
+        "UNAUTHENTICATED: QUERY_ENGINE_SECRET is not set."
+    )
+
+
+def verify_internal_secret(x_internal_secret: str = Header(None)):
+    if x_internal_secret != INTERNAL_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
 
 class LoadRequest(BaseModel):
     sheetId: str
@@ -32,7 +48,6 @@ def parse_csv(csv_text: str) -> pd.DataFrame:
 
 
 def _get_or_load(sheet_id: str, csv_text: str) -> pd.DataFrame:
-    """Shared cache-check-or-parse logic used by /load, /columns, and /execute."""
     entry = CACHE.get(sheet_id)
     if entry is None:
         df = parse_csv(csv_text)
@@ -42,25 +57,24 @@ def _get_or_load(sheet_id: str, csv_text: str) -> pd.DataFrame:
     return entry["df"]
 
 
-@app.post("/load")
+
+#server pinger
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/load", dependencies=[Depends(verify_internal_secret)])
 def load(req: LoadRequest):
     try:
         df = _get_or_load(req.sheetId, req.csv)
-        return {
-            "status": "ok",
-            "rowCount": len(df),
-            "columns": list(df.columns),
-        }
+        return {"status": "ok", "rowCount": len(df), "columns": list(df.columns)}
     except Exception as e:
-        # Catch-all: same principle as /execute below — an unexpected error
-        # (a malformed CSV, an unusual dtype, anything not explicitly
-        # anticipated) must still return clean JSON, never a raw crash that
-        # a calling client can't parse.
         print(f"Unexpected /load error: {e}")
         return {"status": "error", "error": "INTERNAL_ERROR", "detail": str(e)}
 
 
-@app.post("/columns")
+@app.post("/columns", dependencies=[Depends(verify_internal_secret)])
 def columns(req: ColumnsRequest):
     try:
         df = _get_or_load(req.sheetId, req.csv)
@@ -70,7 +84,7 @@ def columns(req: ColumnsRequest):
         return {"status": "error", "error": "INTERNAL_ERROR", "detail": str(e)}
 
 
-@app.post("/execute")
+@app.post("/execute", dependencies=[Depends(verify_internal_secret)])
 def execute(req: ExecuteRequest):
     try:
         df = _get_or_load(req.sheetId, req.csv)
@@ -83,49 +97,16 @@ def execute(req: ExecuteRequest):
     try:
         result = run_steps(df, req.steps, req.final_step, valid_columns)
     except OpError as e:
-        # Expected, well-understood failures (unknown column, bad chain, etc.)
         return {"status": "error", **e.payload}
     except Exception as e:
-        # Catch-all: this is exactly the class of bug that caused the real
-        # "Timestamp not JSON serializable" crash — an error we hadn't
-        # explicitly coded for should still come back as JSON, not plain
-        # text, so the calling client never has to guess what happened.
         print(f"Unexpected /execute error: {e}")
         return {"status": "error", "error": "INTERNAL_ERROR", "detail": str(e)}
 
     return {"status": "ok", **result}
 
-
-@app.get("/check-cache/{sheet_id}")
-def check_cache(sheet_id: str):
-    if sheet_id not in CACHE:
-        return {"cached": False}
-    return {"cached": True, "rowCount": len(CACHE[sheet_id]["df"])}
-
-
-@app.get("/debug/columns/{sheet_id}")
-def debug_columns(sheet_id: str):
-    entry = CACHE.get(sheet_id)
-    if entry is None:
-        return {"error": "not cached"}
-    return {"columns": [repr(c) for c in entry["df"].columns]}
-
-
-@app.get("/debug/cache")
-def debug_cache():
-    now = time.time()
-    return {
-        sheet_id: {
-            "rowCount": len(entry["df"]),
-            "secondsSinceLastUse": round(now - entry["last_used"], 1),
-        }
-        for sheet_id, entry in CACHE.items()
-    }
-
-
 def evict_expired():
     while True:
-        time.sleep(10)  # check every 10 seconds
+        time.sleep(10)
         now = time.time()
         expired_ids = [
             sheet_id for sheet_id, entry in CACHE.items()

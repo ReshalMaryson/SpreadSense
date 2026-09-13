@@ -7,12 +7,20 @@ const refreshTokenSchema = require("../models/refreshTokenSchema");
 
 // helper method
 const { purgeOldSheets } = require("../cornjob/deleteOldFiles");
+const { json } = require("express");
 
 exports.Login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!password || password.trim() == "" || !email || email.trim() == "") {
+    if (
+      typeof password != "string" ||
+      typeof email != "string" ||
+      !password ||
+      password.trim() == "" ||
+      !email ||
+      email.trim() == ""
+    ) {
       return res.status(400).json({ message: "missing required fields" });
     }
 
@@ -47,23 +55,30 @@ exports.Login = async (req, res) => {
     );
 
     if (refreshToken) {
-      refreshTokenSchema.create({
-        user: user._id,
-        token: refreshToken,
-      });
+      try {
+        await refreshTokenSchema.create({
+          user: user._id,
+          token: refreshToken,
+        });
+      } catch (err) {
+        console.error("Failed to persist refresh token during login:", err);
+        return res
+          .status(500)
+          .json({ message: "Server error, please try again" });
+      }
     }
 
     res.cookie("token", accessToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: process.env.APP_ENVIRONMENT === "PROD" ? true : false,
+      sameSite: process.env.APP_ENVIRONMENT === "PROD" ? "none" : "strict",
       maxAge: 1 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: process.env.APP_ENVIRONMENT === "PROD" ? true : false,
+      sameSite: process.env.APP_ENVIRONMENT === "PROD" ? "none" : "strict",
       maxAge: 1 * 24 * 60 * 60 * 1000,
     });
 
@@ -108,6 +123,10 @@ exports.Logout = async (req, res) => {
     });
   } catch (err) {
     console.log(err);
+    return res.status(500).json({
+      status: false,
+      message: "failed Logout, Server Error",
+    });
   }
 };
 
@@ -150,23 +169,31 @@ exports.refreshToken = async (req, res) => {
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: "1d" },
     );
-
-    await refreshTokenSchema.create({
-      user: tokenVerify.id,
-      token: newRefreshToken,
-    });
+    try {
+      await refreshTokenSchema.create({
+        user: tokenVerify.id,
+        token: newRefreshToken,
+      });
+    } catch (err) {
+      console.error("Failed to persist refresh token during login:", err);
+      return res
+        .status(500)
+        .json({ message: "Server error, please try again" });
+    }
 
     res.cookie("token", newAccessToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: process.env.APP_ENVIRONMENT === "PRODUCTION" ? true : false,
+      sameSite:
+        process.env.APP_ENVIRONMENT === "PRODUCTION" ? "none" : "strict",
       maxAge: 1 * 60 * 1000,
     });
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: process.env.APP_ENVIRONMENT === "PRODUCTION" ? true : false,
+      sameSite:
+        process.env.APP_ENVIRONMENT === "PRODUCTION" ? "none" : "strict",
       maxAge: 1 * 24 * 60 * 60 * 1000,
     });
 
@@ -242,16 +269,18 @@ exports.GoogleLogin = async (req, res) => {
     // save access token in cookie
     res.cookie("token", jwtAccessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.APP_ENVIRONMENT === "PRODUCTION" ? true : false,
+      sameSite:
+        process.env.APP_ENVIRONMENT === "PRODUCTION" ? "none" : "strict",
       maxAge: 3 * 60 * 1000,
     });
 
     // save refresh token in cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.APP_ENVIRONMENT === "PRODUCTION" ? true : false,
+      sameSite:
+        process.env.APP_ENVIRONMENT === "PRODUCTION" ? "none" : "strict",
       maxAge: 1 * 24 * 60 * 60 * 1000,
     });
 

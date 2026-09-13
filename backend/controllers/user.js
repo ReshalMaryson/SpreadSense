@@ -58,7 +58,7 @@ exports.createUser = async (req, res) => {
       });
     }
 
-    const hashedPass = await bcyrpt.hash(password, 10);
+    const hashedPass = await bcrypt.hash(password, 10);
 
     const payload = {
       name: req.body.name,
@@ -123,7 +123,7 @@ exports.getVerifiedUser = async (req, res) => {
 // delete logged in user's account and delete its current token
 exports.deleteUserAcc = async (req, res) => {
   try {
-    const deleteduser = await User.findByIdAndDelete({ _id: req.id });
+    const deleteduser = await User.findByIdAndDelete(req.id);
 
     if (!deleteduser) {
       return res.status(404).json({
@@ -170,7 +170,7 @@ exports.updateUser = async (req, res) => {
 
     // update in the DB
     const userupdated = await User.findByIdAndUpdate(Id, payload, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 
@@ -185,6 +185,7 @@ exports.updateUser = async (req, res) => {
       .status(200)
       .json({ status: "success", message: "updated", user: userupdated });
   } catch (err) {
+    console.log(err);
     return res
       .status(500)
       .json({ status: "failure", message: "server error " + err.message });

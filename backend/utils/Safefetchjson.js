@@ -1,7 +1,12 @@
-async function safeFetchJson(url, options) {
+async function safeFetchJson(url, options = {}) {
+  const headers = {
+    ...(options.headers || {}),
+    "X-Internal-Secret": process.env.QUERY_ENGINE_SECRET,
+  };
+
   let response;
   try {
-    response = await fetch(url, options);
+    response = await fetch(url, { ...options, headers });
   } catch (networkError) {
     return {
       ok: false,
