@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 
 //components
 import Header from "./components/header/header";
-import LandingPage from "./components/landingPage/landingPage";
+import LandingPage from "./components/landingPage/landingPage.jsx";
 import Login from "./components/auth/login";
 import Signup from "./components/auth/signup";
 import Profile from "./components/user/profile/profile";
