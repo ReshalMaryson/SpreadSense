@@ -22,7 +22,10 @@ const chatRoutes = require("./routes/chatRoute");
 //cors
 server.use(
   cors({
-    origin: "http://localhost:5173",
+    origin:
+      process.env.APP_ENVIRONMENT === "PRODUCTION"
+        ? "https://spread-sense.vercel.app/"
+        : "http://localhost:5173",
     credentials: true,
   }),
 );
