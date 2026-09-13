@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000",
+  baseURL:
+    import.meta.env.VITE_APP_ENVIRONMENT === "PRODUCTION"
+      ? "https://spreadsense.onrender.com"
+      : "http://localhost:5000",
   withCredentials: true,
 });
 
@@ -19,23 +22,21 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     if (
-        error.response?.status === 401 &&
-        !originalRequest._retry &&
-        !originalRequest.skipAuthRefresh &&
-        originalRequest.url !== "/auth/refresh"
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.skipAuthRefresh &&
+      originalRequest.url !== "/auth/refresh"
     ) {
       originalRequest._retry = true;
 
       try {
         if (!refreshPromise) {
-          refreshPromise = api
-            .post("/auth/refresh")
-            .finally(() => {
-              refreshPromise = null;
-            });
+          refreshPromise = api.post("/auth/refresh").finally(() => {
+            refreshPromise = null;
+          });
         }
         await refreshPromise;
-                return api(originalRequest);
+        return api(originalRequest);
       } catch (refreshError) {
         onSessionExpired();
 
@@ -44,7 +45,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
