@@ -70,15 +70,17 @@ exports.Login = async (req, res) => {
 
     res.cookie("token", accessToken, {
       httpOnly: true,
-      secure: process.env.APP_ENVIRONMENT === "PROD" ? true : false,
-      sameSite: process.env.APP_ENVIRONMENT === "PROD" ? "none" : "strict",
+      secure: process.env.APP_ENVIRONMENT === "PRODUCTION" ? true : false,
+      sameSite:
+        process.env.APP_ENVIRONMENT === "PRODUCTION" ? "none" : "strict",
       maxAge: 1 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.APP_ENVIRONMENT === "PROD" ? true : false,
-      sameSite: process.env.APP_ENVIRONMENT === "PROD" ? "none" : "strict",
+      secure: process.env.APP_ENVIRONMENT === "PRODUCTION" ? true : false,
+      sameSite:
+        process.env.APP_ENVIRONMENT === "PRODUCTION" ? "none" : "strict",
       maxAge: 1 * 24 * 60 * 60 * 1000,
     });
 
