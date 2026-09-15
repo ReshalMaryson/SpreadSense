@@ -444,6 +444,11 @@ body::-webkit-scrollbar-thumb:hover {
   text-decoration: underline;
 }
 
+.file-warning {
+  font-size: 0.7rem;
+  color: rgb(130, 30, 30);
+}
+
 @media (max-width: 800px) {
   .profile-main {
     padding: 70px 30px 50px;

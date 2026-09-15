@@ -1,19 +1,10 @@
 const { generateInsightQueries } = require("./insightsQueryService");
 const { humanizeInsights } = require("./insightsHumanizeService");
-const { safeFetchJson } = require("../utils/Safefetchjson"); // adjust path to match your project
+const { safeFetchJson } = require("../utils/Safefetchjson");
 
 const QUERY_ENGINE_URL =
   process.env.QUERY_ENGINE_URL || "http://localhost:8000";
 
-/**
- * Full insight pipeline, engine-backed instead of codeExecution.
- * Now routes through safeFetchJson instead of raw fetch — this is what was
- * missing before: safeFetchJson automatically attaches the internal secret
- * header (required by the engine's auth), AND never throws an uncaught
- * SyntaxError if the engine ever returns something non-JSON (a crash, a
- * platform-level error page during a cold restart, etc.) — it returns a
- * clear { ok: false, error: "..." } instead, which we can log and handle.
- */
 async function generateInsights(sheetId, csv, insightCount) {
   const columnsResult = await safeFetchJson(`${QUERY_ENGINE_URL}/columns`, {
     method: "POST",

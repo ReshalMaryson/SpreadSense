@@ -243,7 +243,8 @@
   }
 
   .cta-wrap {
-    margin-top: clamp(12px, 2.5vh, 24px);
+    /* margin-top: clamp(20px, 2.5vh, 24px); */
+    margin-top: 50px;
   }
 
   .cta-btn {

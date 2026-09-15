@@ -55,7 +55,7 @@ export default function Login() {
         <div className="intro-content">
           <span className="intro-label">MADE FOR EVERYDAY DECISIONS</span>
 
-          <h1>
+          <h1 className="right-side">
             Welcome back.
             <br />
             Let’s continue
@@ -63,13 +63,13 @@ export default function Login() {
             <em>with clarity.</em>
           </h1>
 
-          <div className="intro-divider">
+          <div className="intro-divider right-side">
             <span></span>
             <span className="divider-symbol">✳</span>
             <span></span>
           </div>
 
-          <p>
+          <p className="right-side">
             Login to access your dashboard
             <br />
             and get insights from your data.

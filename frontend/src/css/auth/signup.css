@@ -346,7 +346,7 @@
 
 @media (max-width: 600px) {
   .signup-intro {
-    padding: 60px 7vw 30px;
+    display: none;
   }
 
   .intro-label {
@@ -371,5 +371,6 @@
 
   .signup-heading h2 {
     font-size: 2.2rem;
+    margin-top: 10px;
   }
 }

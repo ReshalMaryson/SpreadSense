@@ -344,7 +344,7 @@
 
 @media (max-width: 600px) {
   .login-intro {
-    padding: 60px 7vw 30px;
+    display: none;
   }
 
   .intro-label {
@@ -360,6 +360,7 @@
   }
 
   .login-form-section {
+    margin-top: -50px;
     padding: 30px 7vw 60px;
   }
 

@@ -1,11 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  // baseURL:
-  //   import.meta.env.VITE_APP_ENVIRONMENT === "PRODUCTION"
-  //     ? "https://spreadsense.onrender.com"
-  //     : "http://localhost:5000",
-  baseURL: "https://spreadsense.onrender.com",
+  baseURL:
+    import.meta.env.VITE_APP_ENVIRONMENT === "PRODUCTION"
+      ? "https://spreadsense.onrender.com"
+      : "http://localhost:5000",
   withCredentials: true,
 });
 

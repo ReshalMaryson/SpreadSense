@@ -67,7 +67,7 @@ export default function Signup() {
             <span></span>
           </div>
 
-          <p>
+          <p className="heading-intro">
             Create your account and start
             <br />
             getting more from your data.

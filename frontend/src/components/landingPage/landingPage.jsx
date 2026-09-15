@@ -26,7 +26,6 @@ const HEADLINES = [
 ];
 
 export default function LandingPage() {
-  const [user, setUser] = useState([]);
   const [current, setCurrent] = useState(0);
   useEffect(() => {
     const reducedMotion = window.matchMedia(

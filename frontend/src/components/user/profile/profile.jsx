@@ -223,6 +223,9 @@ export default function Profile() {
             <div>
               <span className="section-label">YOUR FILES</span>
               <h2>Uploaded spreadsheets</h2>
+              <span className="file-warning">
+                Files older than 20 days will be deleted automatically.
+              </span>
             </div>
             <span className="file-count">{userFiles.length} files</span>
           </div>
