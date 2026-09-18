@@ -14,6 +14,9 @@ from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv;
 load_dotenv()
 
+
+
+app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://spread-sense.vercel.app"],
@@ -21,9 +24,6 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
-
-app = FastAPI()
-
 #rate limiters
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
