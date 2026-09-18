@@ -1,3 +1,5 @@
+import io
+import re
 import pandas as pd
 import numpy as np
 
@@ -17,14 +19,41 @@ VALID_CMP_OPS = {
     "lte": lambda s, v: s <= v,
 }
 
+SHEET_MARKER_PATTERN = re.compile(r"^Sheet:\s*(.+)$")
 
-def _require_numeric(series, agg, column_name):
-    if agg in NUMERIC_ONLY_AGGS and not pd.api.types.is_numeric_dtype(series):
-        raise ValueError(
-            f"column '{column_name}' is not numeric (dtype: {series.dtype}) — "
-            f"cannot compute '{agg}' on it. This column may contain text, "
-            f"formatted numbers (e.g. with commas), or mixed values."
-        )
+
+def parse_multi_sheet_csv(csv_text: str) -> dict:
+    """
+    Returns {sheet_name: DataFrame} for a workbook-style CSV with one or
+    more "Sheet: <name>" markers. Falls back to a single entry keyed "df"
+    if no markers are found at all (backward compatible with a plain,
+    non-workbook-derived CSV).
+    """
+    lines = csv_text.splitlines()
+
+    markers = []
+    for i, line in enumerate(lines):
+        match = SHEET_MARKER_PATTERN.match(line.strip())
+        if match:
+            markers.append((i, match.group(1).strip()))
+
+    if not markers:
+        df = pd.read_csv(io.StringIO(csv_text))
+        return {"df": df}
+
+    sheets = {}
+    for idx, (start_line, sheet_name) in enumerate(markers):
+        end_line = markers[idx + 1][0] if idx + 1 < len(markers) else len(lines)
+        block_lines = lines[start_line + 1 : end_line]
+        block_text = "\n".join(block_lines)
+
+        if not block_text.strip():
+            continue
+
+        df = pd.read_csv(io.StringIO(block_text))
+        sheets[sheet_name] = df
+
+    return sheets
 
 
 def op_groupby_agg(df, params):
@@ -32,7 +61,12 @@ def op_groupby_agg(df, params):
     if agg not in VALID_AGGS:
         raise ValueError(f"agg '{agg}' not in {VALID_AGGS}")
     metric = params["metric"]
-    _require_numeric(df[metric], agg, metric)
+    if agg in NUMERIC_ONLY_AGGS and not pd.api.types.is_numeric_dtype(df[metric]):
+        raise ValueError(
+            f"column '{metric}' is not numeric (dtype: {df[metric].dtype}) — "
+            f"cannot compute '{agg}' on it. This column may contain text, "
+            f"formatted numbers (e.g. with commas), or mixed values."
+        )
     return df.groupby(params["group_by"])[metric].agg(agg)
 
 
@@ -41,7 +75,11 @@ def op_aggregate(df, params):
     if agg not in VALID_AGGS:
         raise ValueError(f"agg '{agg}' not in {VALID_AGGS}")
     column = params["column"]
-    _require_numeric(df[column], agg, column)
+    if agg in NUMERIC_ONLY_AGGS and not pd.api.types.is_numeric_dtype(df[column]):
+        raise ValueError(
+            f"column '{column}' is not numeric (dtype: {df[column].dtype}) — "
+            f"cannot compute '{agg}' on it."
+        )
     return df[column].agg(agg)
 
 
@@ -117,6 +155,39 @@ def op_get_value(data, params):
         return data.iloc[0]
     return data.iloc[0][params["column"]]
 
+VALID_JOIN_HOW = {"inner", "left", "right", "outer"}
+
+
+def op_join(results, params, step_id):
+    left_key = params.get("left")
+    right_key = params.get("right")
+
+    if left_key not in results:
+        raise OpError("BAD_INPUT_REF", step_id, f"join 'left' references unknown input '{left_key}'")
+    if right_key not in results:
+        raise OpError("BAD_INPUT_REF", step_id, f"join 'right' references unknown input '{right_key}'")
+
+    left_df = results[left_key]
+    right_df = results[right_key]
+
+    if not isinstance(left_df, pd.DataFrame) or not isinstance(right_df, pd.DataFrame):
+        raise OpError("TYPE_MISMATCH", step_id, "join requires both 'left' and 'right' to be dataframes")
+
+    how = params.get("how", "inner")
+    if how not in VALID_JOIN_HOW:
+        raise ValueError(f"join 'how' must be one of {VALID_JOIN_HOW}, got '{how}'")
+
+    on = params.get("on")
+    left_on = params.get("left_on")
+    right_on = params.get("right_on")
+
+    if on:
+        return left_df.merge(right_df, on=on, how=how, suffixes=("_left", "_right"))
+    elif left_on and right_on:
+        return left_df.merge(right_df, left_on=left_on, right_on=right_on, how=how, suffixes=("_left", "_right"))
+    else:
+        raise ValueError("join requires either 'on' (shared column name) or both 'left_on' and 'right_on'")
+
 
 OPS = {
     "groupby_agg": op_groupby_agg,
@@ -159,21 +230,24 @@ def resolve_refs(step_id, params, results):
             resolved[key] = value
     return resolved
 
-
-def validate_columns(step_id, params, valid_columns):
+def validate_columns(step_id, params, all_known_columns):
     for key in COLUMN_PARAM_KEYS:
-        if key in params and params[key] not in valid_columns:
-            raise OpError("UNKNOWN_COLUMN", step_id, f"column '{params[key]}' not in schema",
-                          available_columns=sorted(valid_columns))
+        if key in params and params[key] not in all_known_columns:
+            raise OpError("UNKNOWN_COLUMN", step_id, f"column '{params[key]}' not in any known sheet",
+                          available_columns=sorted(all_known_columns))
     for key in COLUMN_LIST_PARAM_KEYS:
         if key in params:
             for col in params[key]:
-                if col not in valid_columns:
-                    raise OpError("UNKNOWN_COLUMN", step_id, f"column '{col}' not in schema",
-                                  available_columns=sorted(valid_columns))
-    if "metric" in params and params["metric"] not in valid_columns:
-        raise OpError("UNKNOWN_COLUMN", step_id, f"column '{params['metric']}' not in schema",
-                      available_columns=sorted(valid_columns))
+                if col not in all_known_columns:
+                    raise OpError("UNKNOWN_COLUMN", step_id, f"column '{col}' not in any known sheet",
+                                  available_columns=sorted(all_known_columns))
+    if "metric" in params and params["metric"] not in all_known_columns:
+        raise OpError("UNKNOWN_COLUMN", step_id, f"column '{params['metric']}' not in any known sheet",
+                      available_columns=sorted(all_known_columns))
+    for key in ("on", "left_on", "right_on"):
+        if key in params and params[key] not in all_known_columns:
+            raise OpError("UNKNOWN_COLUMN", step_id, f"column '{params[key]}' not in any known sheet",
+                          available_columns=sorted(all_known_columns))
 
 
 def _to_native(value):
@@ -207,13 +281,16 @@ def serialize(obj):
         return {"kind": "series", "data": [{"key": _to_native(k), "value": _to_native(v)} for k, v in obj.items()]}
     return {"kind": "scalar", "data": _to_native(obj)}
 
-
-def run_steps(df, steps, final_step, valid_columns):
+def run_steps(sheets, steps, final_step):
     if not steps:
         raise OpError("NO_STEPS", None, "steps array is empty")
 
-    results = {"df": df}
-    seen = {"df"}
+    all_known_columns = set()
+    for df in sheets.values():
+        all_known_columns.update(df.columns)
+
+    results = dict(sheets)  # seed with every sheet's dataframe, by name
+    seen = set(sheets.keys())
 
     for step in steps:
         step_id = step.get("id")
@@ -221,10 +298,25 @@ def run_steps(df, steps, final_step, valid_columns):
 
         if not step_id or step_id in seen:
             raise OpError("BAD_STEP_ID", step_id, "missing or duplicate step id")
+
+        if op_name == "join":
+            params = step.get("params", {})
+            validate_columns(step_id, params, all_known_columns)
+            try:
+                results[step_id] = op_join(results, params, step_id)
+            except OpError:
+                raise
+            except Exception as e:
+                raise OpError("EXEC_FAILED", step_id, str(e))
+            seen.add(step_id)
+            continue
+
         if op_name not in OPS:
             raise OpError("UNKNOWN_OP", step_id, f"'{op_name}' is not whitelisted")
 
-        input_ref = step.get("input", "df")
+        input_ref = step.get("input")
+        if input_ref is None:
+            raise OpError("BAD_INPUT_REF", step_id, "step is missing an explicit 'input' (a sheet name or prior step id)")
         if input_ref not in results:
             raise OpError("BAD_INPUT_REF", step_id, f"input '{input_ref}' has not been produced yet")
         input_data = results[input_ref]
@@ -237,7 +329,7 @@ def run_steps(df, steps, final_step, valid_columns):
             raise OpError("TYPE_MISMATCH", step_id, f"'{op_name}' requires a dataframe or series input")
 
         params = resolve_refs(step_id, step.get("params", {}), results)
-        validate_columns(step_id, params, valid_columns)
+        validate_columns(step_id, params, all_known_columns)
 
         try:
             results[step_id] = OPS[op_name](input_data, params)

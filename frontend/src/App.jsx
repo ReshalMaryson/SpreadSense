@@ -11,6 +11,13 @@ import Conversation from "./components/conversation/convoDefaultWindow";
 // middleware
 import RequireAuth from "./middleware/requireAuth";
 function App() {
+  // wake up call for engine
+  useEffect(() => {
+    fetch("https://spreadsenseengine.onrender.com/health", {
+      method: "GET",
+    }).catch(() => {});
+  }, []);
+
   return (
     <>
       <Header />

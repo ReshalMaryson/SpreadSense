@@ -1,25 +1,34 @@
-import io
 import os
 import time
 import threading
-import pandas as pd
 from typing import Union
-from fastapi import FastAPI, Header, HTTPException, Depends
+from fastapi import FastAPI, Header, HTTPException, Depends, Request
 from pydantic import BaseModel
-from ops import run_steps, OpError
+from ops import run_steps, OpError, parse_multi_sheet_csv 
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from dotenv import load_dotenv;
 load_dotenv()
 
 app = FastAPI()
 
-CACHE = {}  
-TTL_SECONDS = 1800  # 30 minutes
+#rate limiters
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+CACHE = {}
+TTL_SECONDS = 1800  # 30 minutes — unchanged
 
 INTERNAL_SECRET = os.environ.get("QUERY_ENGINE_SECRET")
 if not INTERNAL_SECRET:
     raise RuntimeError(
-        "UNAUTHENTICATED: QUERY_ENGINE_SECRET is not set."
+        "QUERY_ENGINE_SECRET env var is not set. This must be set to a random "
+        "secret string, matching exactly what Express sends — the service "
+        "will not start without it, to avoid ever running unauthenticated."
     )
 
 
@@ -37,65 +46,73 @@ class ExecuteRequest(BaseModel):
     csv: str
     steps: list[dict]
     final_step: Union[str, list[str]]
+    
 
 class ColumnsRequest(BaseModel):
     sheetId: str
     csv: str
 
+def parse_csv(csv_text: str) -> dict:
+    return parse_multi_sheet_csv(csv_text)
 
-def parse_csv(csv_text: str) -> pd.DataFrame:
-    return pd.read_csv(io.StringIO(csv_text), skiprows=1)
-
-
-def _get_or_load(sheet_id: str, csv_text: str) -> pd.DataFrame:
+def _get_or_load(sheet_id: str, csv_text: str) -> dict:
     entry = CACHE.get(sheet_id)
     if entry is None:
-        df = parse_csv(csv_text)
-        CACHE[sheet_id] = {"df": df, "last_used": time.time()}
-        return df
+        sheets = parse_csv(csv_text)
+        CACHE[sheet_id] = {"sheets": sheets, "last_used": time.time()}
+        return sheets
     entry["last_used"] = time.time()
-    return entry["df"]
+    return entry["sheets"]
 
 
-
-#server pinger
 @app.get("/health")
-def health():
+@limiter.limit("10/minute")
+def health(request: Request):
+    print(f"Health check from IP: {request.client.host}")
     return {"status": "ok"}
 
 
 @app.post("/load", dependencies=[Depends(verify_internal_secret)])
-def load(req: LoadRequest):
+@limiter.limit("20/minute")
+def load(request: Request, req: LoadRequest):
     try:
-        df = _get_or_load(req.sheetId, req.csv)
-        return {"status": "ok", "rowCount": len(df), "columns": list(df.columns)}
+        sheets = _get_or_load(req.sheetId, req.csv)
+        return {
+            "status": "ok",
+            "sheets": {
+                name: {"rowCount": len(df), "columns": list(df.columns)}
+                for name, df in sheets.items()
+            },
+        }
     except Exception as e:
         print(f"Unexpected /load error: {e}")
         return {"status": "error", "error": "INTERNAL_ERROR", "detail": str(e)}
 
 
 @app.post("/columns", dependencies=[Depends(verify_internal_secret)])
-def columns(req: ColumnsRequest):
+@limiter.limit("20/minute")
+def columns(request: Request, req: ColumnsRequest):
     try:
-        df = _get_or_load(req.sheetId, req.csv)
-        return {"status": "ok", "columns": list(df.columns)}
+        sheets = _get_or_load(req.sheetId, req.csv)
+        return {
+            "status": "ok",
+            "sheets": {name: list(df.columns) for name, df in sheets.items()},
+        }
     except Exception as e:
         print(f"Unexpected /columns error: {e}")
         return {"status": "error", "error": "INTERNAL_ERROR", "detail": str(e)}
 
 
 @app.post("/execute", dependencies=[Depends(verify_internal_secret)])
-def execute(req: ExecuteRequest):
+@limiter.limit("20/minute")
+def execute(request: Request, req: ExecuteRequest):
     try:
-        df = _get_or_load(req.sheetId, req.csv)
+        sheets = _get_or_load(req.sheetId, req.csv)
     except Exception as e:
         print(f"Unexpected /execute load error: {e}")
         return {"status": "error", "error": "INTERNAL_ERROR", "detail": str(e)}
-
-    valid_columns = set(df.columns)
-
     try:
-        result = run_steps(df, req.steps, req.final_step, valid_columns)
+        result = run_steps(sheets, req.steps, req.final_step)
     except OpError as e:
         return {"status": "error", **e.payload}
     except Exception as e:

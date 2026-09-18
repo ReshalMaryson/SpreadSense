@@ -25,7 +25,6 @@ exports.deleteMessage = async (req, res) => {
       .status(200)
       .json({ status: true, message: "Chat deleted successfully" });
   } catch (error) {
-    console.error(error);
     return res
       .status(500)
       .json({ status: false, message: "Failed to delete chat" });
@@ -60,7 +59,6 @@ exports.deleteConversation = async (req, res) => {
       deletedCount: result.deletedCount,
     });
   } catch (error) {
-    console.error(error);
     return res
       .status(500)
       .json({ status: false, message: "Failed to delete conversation" });
@@ -113,8 +111,6 @@ exports.getChatHistory = async (req, res) => {
       chats: validChats,
     });
   } catch (error) {
-    console.error("Get chat history error:", error);
-
     return res.status(500).json({
       message: "Failed to fetch chat history",
     });
@@ -194,8 +190,6 @@ exports.getMessages = async (req, res) => {
       hasMore,
     });
   } catch (error) {
-    console.error(error);
-
     return res.status(500).json({
       status: false,
       message: "Failed to fetch messages",
@@ -265,26 +259,23 @@ exports.chat = async (req, res) => {
     );
 
     if (!columnsResult.ok) {
-      console.error(
-        "Failed to fetch columns from query engine:",
-        columnsResult.error,
-      );
       return res.status(502).json({
         status: false,
         message: "Could not read your data right now. Please try again.",
+        error: columnsResult.error,
       });
     }
 
-    const { columns } = columnsResult.data;
+    const { sheets } = columnsResult.data;
 
     let query;
     try {
-      query = await generateQuery(message, columns, formattedHistory);
+      query = await generateQuery(message, sheets, formattedHistory);
     } catch (queryError) {
-      console.error("Gemini query generation failed:", queryError);
       return res.status(502).json({
         status: false,
         message: "Could not understand that question against your data.",
+        error: queryError,
       });
     }
 
@@ -309,14 +300,12 @@ exports.chat = async (req, res) => {
       );
 
       if (!executeResult.ok) {
-        console.error(
-          "Failed to execute query against query engine:",
-          executeResult.error,
-        );
         return res.status(502).json({
           status: false,
           message:
             "Something went wrong running that against your data. Please try again.",
+
+          error: executeResult.error,
         });
       }
 
@@ -341,7 +330,6 @@ exports.chat = async (req, res) => {
       try {
         reply = await humanizeResult(message, dataForHumanize);
       } catch (humanizeError) {
-        console.error("Humanize step failed:", humanizeError);
         reply = `Answer: ${JSON.stringify(engineResult.data)}`;
       }
     }
@@ -357,7 +345,6 @@ exports.chat = async (req, res) => {
       .status(200)
       .json({ status: true, response: reply, engineResult });
   } catch (error) {
-    console.error(error);
     return res
       .status(500)
       .json({ status: false, message: "Failed to process message" });

@@ -5,6 +5,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const VALID_OPS = [
   "groupby_agg",
   "aggregate",
+  "join",
   "filter_eq",
   "filter_isin",
   "filter_cmp",
@@ -20,12 +21,14 @@ const VALID_OPS = [
 ];
 const VALID_AGGS = ["sum", "mean", "count", "min", "max", "median", "nunique"];
 
-function validateQueryShape(parsed, columns) {
+function validateQueryShape(parsed, sheets) {
   if (!Array.isArray(parsed.steps) || parsed.steps.length === 0) {
     throw new Error("Gemini returned no steps for a query-type response");
   }
 
-  const seenIds = new Set(["df"]);
+  const sheetNames = Object.keys(sheets);
+  const allColumns = Object.values(sheets).flat();
+  const seenIds = new Set(sheetNames);
 
   for (const step of parsed.steps) {
     if (!step.id || seenIds.has(step.id)) {
@@ -34,23 +37,33 @@ function validateQueryShape(parsed, columns) {
     if (!VALID_OPS.includes(step.op)) {
       throw new Error(`Gemini returned an unknown op: ${step.op}`);
     }
-    if (step.input !== "df" && !seenIds.has(step.input)) {
-      throw new Error(
-        `Step '${step.id}' references input '${step.input}' before it exists`,
-      );
-    }
 
     const params = step.params || {};
-    for (const key of ["column", "metric"]) {
-      if (params[key] && !columns.includes(params[key])) {
+
+    if (step.op === "join") {
+      if (!seenIds.has(params.left))
+        throw new Error(`join 'left' references unknown input: ${params.left}`);
+      if (!seenIds.has(params.right))
+        throw new Error(
+          `join 'right' references unknown input: ${params.right}`,
+        );
+    } else {
+      if (!seenIds.has(step.input)) {
+        throw new Error(
+          `Step '${step.id}' references input '${step.input}' before it exists`,
+        );
+      }
+    }
+
+    for (const key of ["column", "metric", "on", "left_on", "right_on"]) {
+      if (params[key] && !allColumns.includes(params[key])) {
         throw new Error(`Gemini referenced unknown column: ${params[key]}`);
       }
     }
     if (params.group_by) {
       for (const col of params.group_by) {
-        if (!columns.includes(col)) {
+        if (!allColumns.includes(col))
           throw new Error(`Gemini referenced unknown column: ${col}`);
-        }
       }
     }
     if (params.agg && !VALID_AGGS.includes(params.agg)) {
@@ -64,28 +77,20 @@ function validateQueryShape(parsed, columns) {
     ? parsed.final_step
     : [parsed.final_step];
   for (const fid of finalSteps) {
-    if (!seenIds.has(fid)) {
+    if (!seenIds.has(fid))
       throw new Error(`final_step '${fid}' was never produced`);
-    }
   }
+
   if (Array.isArray(parsed.final_step)) {
-    if (!parsed.final_labels || typeof parsed.final_labels !== "object") {
-      throw new Error(
-        "Compound final_step requires final_labels, none were provided",
-      );
-    }
+    if (!parsed.final_labels)
+      throw new Error("Compound final_step requires final_labels");
     for (const fid of finalSteps) {
-      if (
-        !parsed.final_labels[fid] ||
-        typeof parsed.final_labels[fid] !== "string"
-      ) {
+      if (!parsed.final_labels[fid])
         throw new Error(`final_labels missing a label for step '${fid}'`);
-      }
     }
   }
 }
-
-function validateResponse(parsed, columns) {
+function validateResponse(parsed, sheets) {
   if (parsed.type === "conversation") {
     if (!parsed.reply || typeof parsed.reply !== "string") {
       throw new Error(
@@ -95,14 +100,14 @@ function validateResponse(parsed, columns) {
     return;
   }
   if (parsed.type === "query") {
-    validateQueryShape(parsed, columns);
+    validateQueryShape(parsed, sheets);
     return;
   }
   throw new Error(`Unknown response type: ${parsed.type}`);
 }
 
-async function generateQuery(userMessage, columns, history = []) {
-  const schemaBlock = `Columns available: ${JSON.stringify(columns)}`;
+async function generateQuery(userMessage, sheets, history = []) {
+  const schemaBlock = `Sheets and their columns: ${JSON.stringify(sheets)}`;
 
   const contents = [
     { role: "user", parts: [{ text: schemaBlock }] },
@@ -135,7 +140,7 @@ async function generateQuery(userMessage, columns, history = []) {
 
   const parsed = JSON.parse(response.text);
 
-  validateResponse(parsed, columns);
+  validateResponse(parsed, sheets);
 
   return parsed;
 }

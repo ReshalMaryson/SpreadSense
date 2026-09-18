@@ -18,10 +18,10 @@ async function generateInsights(sheetId, csv, insightCount) {
     );
   }
 
-  const { columns } = columnsResult.data;
+  const { sheets } = columnsResult.data;
 
   const queries = await generateInsightQueries(
-    columns,
+    sheets,
     insightCount < 500 ? 4 : 6,
   );
 

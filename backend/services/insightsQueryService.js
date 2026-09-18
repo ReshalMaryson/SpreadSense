@@ -5,6 +5,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const VALID_OPS = [
   "groupby_agg",
   "aggregate",
+  "join",
   "filter_eq",
   "filter_isin",
   "filter_cmp",
@@ -20,12 +21,14 @@ const VALID_OPS = [
 ];
 const VALID_AGGS = ["sum", "mean", "count", "min", "max", "median", "nunique"];
 
-function validateQueryChain(query, columns) {
+function validateQueryChain(query, sheets) {
   if (!Array.isArray(query.steps) || query.steps.length === 0) {
     throw new Error(`Query '${query.topic}' has no steps`);
   }
 
-  const seenIds = new Set(["df"]);
+  const sheetNames = Object.keys(sheets);
+  const allColumns = Object.values(sheets).flat();
+  const seenIds = new Set(sheetNames);
 
   for (const step of query.steps) {
     if (!step.id || seenIds.has(step.id)) {
@@ -36,23 +39,33 @@ function validateQueryChain(query, columns) {
     if (!VALID_OPS.includes(step.op)) {
       throw new Error(`Unknown op in '${query.topic}': ${step.op}`);
     }
-    if (step.input !== "df" && !seenIds.has(step.input)) {
+
+    const params = step.params || {};
+
+    if (step.op === "join") {
+      if (!seenIds.has(params.left))
+        throw new Error(
+          `join 'left' unknown in '${query.topic}': ${params.left}`,
+        );
+      if (!seenIds.has(params.right))
+        throw new Error(
+          `join 'right' unknown in '${query.topic}': ${params.right}`,
+        );
+    } else if (!seenIds.has(step.input)) {
       throw new Error(
         `Step '${step.id}' in '${query.topic}' references input before it exists`,
       );
     }
 
-    const params = step.params || {};
-    for (const key of ["column", "metric"]) {
-      if (params[key] && !columns.includes(params[key])) {
+    for (const key of ["column", "metric", "on", "left_on", "right_on"]) {
+      if (params[key] && !allColumns.includes(params[key])) {
         throw new Error(`Unknown column in '${query.topic}': ${params[key]}`);
       }
     }
     if (params.group_by) {
       for (const col of params.group_by) {
-        if (!columns.includes(col)) {
+        if (!allColumns.includes(col))
           throw new Error(`Unknown column in '${query.topic}': ${col}`);
-        }
       }
     }
     if (params.agg && !VALID_AGGS.includes(params.agg)) {
@@ -74,8 +87,9 @@ function validateQueryChain(query, columns) {
   }
 }
 
-async function generateInsightQueries(columns, insightCount) {
-  const prompt = `Columns available: ${JSON.stringify(columns)}`;
+async function generateInsightQueries(sheets, insightCount) {
+  const prompt = `Sheets and their columns: ${JSON.stringify(sheets)}`;
+
   const SYSTEM_INSTRUCTION =
     process.env.INSIGHTS_QUERY_GENERATION_RULES.replace(/\\n/g, "\n");
 
@@ -102,7 +116,7 @@ async function generateInsightQueries(columns, insightCount) {
   const valid = [];
   for (const query of parsed.queries) {
     try {
-      validateQueryChain(query, columns);
+      validateQueryChain(query, sheets);
       valid.push(query);
     } catch (err) {
       console.error("Dropping invalid insight query:", err.message);

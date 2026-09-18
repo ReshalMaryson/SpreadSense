@@ -35,11 +35,11 @@ exports.getUserFiles = async (req, res) => {
     };
     // success response
     return res.status(200).json(payload);
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
     return res.status(500).json({
       status: false,
       message: "Server Error: Unable to fetch files",
+      error: err,
     });
   }
 };
@@ -71,12 +71,11 @@ exports.searchFilesByName = async (req, res) => {
       message: "Files searched successfully",
       data: files,
     });
-  } catch (error) {
-    console.error(error);
-
+  } catch (err) {
     return res.status(500).json({
       status: false,
       message: "Server Error: Unable to search files",
+      error: err,
     });
   }
 };
@@ -124,12 +123,11 @@ exports.deleteFileAndContent = async (req, res) => {
       status: true,
       message: "File and related data deleted successfully",
     });
-  } catch (error) {
+  } catch (err) {
     await session.abortTransaction();
-    console.error(error);
     return res
       .status(500)
-      .json({ stauts: false, message: "Failed to delete file" });
+      .json({ stauts: false, message: "Failed to delete file", error: err });
   } finally {
     session.endSession();
   }

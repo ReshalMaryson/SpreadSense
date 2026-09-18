@@ -61,10 +61,9 @@ exports.Login = async (req, res) => {
           token: refreshToken,
         });
       } catch (err) {
-        console.error("Failed to persist refresh token during login:", err);
         return res
           .status(500)
-          .json({ message: "Server error, please try again" });
+          .json({ message: "Server error, please try again", error: err });
       }
     }
 
@@ -124,7 +123,6 @@ exports.Logout = async (req, res) => {
       message: "Logged out successfully",
     });
   } catch (err) {
-    console.log(err);
     return res.status(500).json({
       status: false,
       message: "failed Logout, Server Error",
@@ -177,10 +175,9 @@ exports.refreshToken = async (req, res) => {
         token: newRefreshToken,
       });
     } catch (err) {
-      console.error("Failed to persist refresh token during login:", err);
       return res
         .status(500)
-        .json({ message: "Server error, please try again" });
+        .json({ message: "Server error, please try again", error: err });
     }
 
     res.cookie("token", newAccessToken, {
