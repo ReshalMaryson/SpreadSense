@@ -1,6 +1,7 @@
 import os
 import time
 import threading
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Union
 from fastapi import FastAPI, Header, HTTPException, Depends, Request
 from pydantic import BaseModel
@@ -13,6 +14,14 @@ from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv;
 load_dotenv()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://spread-sense.vercel.app"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
 app = FastAPI()
 
 #rate limiters
@@ -21,7 +30,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 CACHE = {}
-TTL_SECONDS = 1800  # 30 minutes — unchanged
+TTL_SECONDS = 1800  # 30 minutes 
 
 INTERNAL_SECRET = os.environ.get("QUERY_ENGINE_SECRET")
 if not INTERNAL_SECRET:
