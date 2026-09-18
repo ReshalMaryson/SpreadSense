@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-
+import { useEffect } from "react";
 //components
 import Header from "./components/header/header";
 import LandingPage from "./components/landingPage/landingPage.jsx";
