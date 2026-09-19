@@ -41,7 +41,7 @@ function InsightsWindow({ fileName, insights, onTalk, SheetId }) {
           <span className="dot" />
           <span>{fileName}</span>
         </div>
-        <h2>Six things worth knowing.</h2>
+        <h2>Things worth knowing.</h2>
       </div>
 
       <div className="insights-body">

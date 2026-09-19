@@ -73,7 +73,7 @@ export default function LandingPage() {
               >
                 <path d="M12 3v13M7 8l5-5 5 5M5 21h14" />
               </svg>
-              Upload your file
+              Your Files
             </Link>
             <input type="file" hidden className="landing-page-file-input" />
           </div>

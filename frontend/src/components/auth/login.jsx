@@ -173,10 +173,6 @@ export default function Login() {
                   )}
                 </button>
               </div>
-
-              <a href="/forgot-password" className="forgot-password">
-                Forgot password?
-              </a>
             </div>
             <div className="show-errMessage">
               {errMessage && (

@@ -30,8 +30,8 @@ export default function Header() {
       {/* Desktop navigation */}
       <div className="nav-right">
         <div className="nav-links">
-          <Link to="/how" style={{ textDecoration: "none" }}>
-            How it works
+          <Link to="/conversation" style={{ textDecoration: "none" }}>
+            Uploads
           </Link>
         </div>
 

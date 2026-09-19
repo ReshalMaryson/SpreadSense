@@ -138,8 +138,26 @@ async function generateQuery(userMessage, sheets, history = []) {
     },
   });
 
-  const parsed = JSON.parse(response.text);
+  let parsed;
+  try {
+    parsed = JSON.parse(response.text);
+  } catch (firstParseError) {
+    console.error(
+      "Gemini returned malformed JSON, retrying once...",
+      firstParseError.message,
+    );
 
+    const retryResponse = await ai.models.generateContent({
+      model: "gemini-3.5-flash-lite",
+      contents,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+      },
+    });
+
+    parsed = JSON.parse(retryResponse.text);
+  }
   validateResponse(parsed, sheets);
 
   return parsed;
