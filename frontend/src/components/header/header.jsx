@@ -106,12 +106,12 @@ export default function Header() {
         {/* Sidebar links */}
         <div className="sidebar-links">
           <Link
-            to="/how"
+            to="/conversation"
             onClick={() => setMenuOpen(false)}
             className="sidebar-link-mobile"
             style={{ fontSize: "1.5rem" }}
           >
-            How it works
+            Uploads
           </Link>
 
           {user ? (
