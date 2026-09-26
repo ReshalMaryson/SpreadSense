@@ -227,7 +227,7 @@ export default function Profile() {
                 Files older than 20 days will be deleted automatically.
               </span>
             </div>
-            <span className="file-count">{userFiles.length} files</span>
+            <span className="file-count">{userFiles.length == 1 ? "file : files} </span>
           </div>
           <div className="showFileBox">
             <div className="files-list">
